@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de31da0ed97499f4491eadd5af001791, type: 3}
+  m_Name: FoodMenu
+  m_EditorClassIdentifier: 
+  <DeliveryRecipeSOArray>k__BackingField:
+  - {fileID: 11400000, guid: a5f693b974413da44bb821039a100dfe, type: 2}
+  - {fileID: 11400000, guid: 5d39718c1a8af5e4c802d1431360d0ca, type: 2}
+  - {fileID: 11400000, guid: 4a2c3322aab8afa418a1ca8f66519cdc, type: 2}
+  - {fileID: 11400000, guid: 9297e533fdbe1a34792cf3fce46a7156, type: 2}
+  - {fileID: 11400000, guid: a4ff1cc0fe5ed274fa527b2c1aac4a77, type: 2}
+  - {fileID: 11400000, guid: bd6af6a5e8f40e6489a8ac1574687db1, type: 2}
+  - {fileID: 11400000, guid: 385e9954b592a384da32a92ce8e28fa8, type: 2}

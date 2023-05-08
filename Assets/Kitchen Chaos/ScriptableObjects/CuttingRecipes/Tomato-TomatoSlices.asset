@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ad487a7cb9313345baf5980bcfbb178, type: 3}
+  m_Name: Tomato-TomatoSlices
+  m_EditorClassIdentifier: 
+  <InputKitchenItemSO>k__BackingField: {fileID: 11400000, guid: fad71507621bbba43b2722f1cdab58e9,
+    type: 2}
+  <OutputKitchenItemSO>k__BackingField: {fileID: 11400000, guid: 4fd5cd7efa1e63f4998aa8462d70798e,
+    type: 2}
+  <CuttingProgressMax>k__BackingField: 3
