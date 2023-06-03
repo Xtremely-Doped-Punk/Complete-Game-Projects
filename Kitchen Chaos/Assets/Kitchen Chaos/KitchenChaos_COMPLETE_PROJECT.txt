@@ -1,0 +1,16 @@
+To download the Complete Project Files go to the website and download the project files for the first or last lecture.
+https://unitycodemonkey.com/kitchenchaoscourse.php
+
+For Multiplayer Game, Tips:
+
+Player-Logs stores the debug logs in build of the game, to test multiplayer
+which can be found under resp locations according to platform, for windows:
+%USERPROFILE%\AppData\LocalLow\CompanyName\ProductName\Player.log
+this file will automaticly be updated in background, while the build is running as well
+just need to refresh in file viewer to notice the changes, log entered newly...
+Another easier work around, get Quantum Console, it paid asset, 
+or get package through pirated website ;)
+
+Here, I am implementing Game Logic to be of Server Authenticated,
+where as Animator and other visual components syncs are to be of Client Athenticated 
+as it makes more sense, as it could even be extend to competive game mode...
