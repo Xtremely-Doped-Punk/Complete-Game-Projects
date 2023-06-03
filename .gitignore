@@ -1,0 +1,3 @@
+# Ignore Parallel-Sync Clone Project Files
+# here, any project folder having substring 'clone' in it is ignored
+**/*clone*/

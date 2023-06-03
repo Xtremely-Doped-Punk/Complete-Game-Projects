@@ -155,9 +155,14 @@ namespace KC
         [ServerRpc(RequireOwnership = false)] 
         private void CheckDeliveryRecipeServerRpc(int whichDeliveryCounterIndex, Ingredient.NetworkData[] plateIngredientsNetworkDataList)
         {
-            if (plateIngredientsNetworkDataList == null || whichDeliveryCounterIndex == -1)
+            if (whichDeliveryCounterIndex == -1)
             {
                 Debug.LogError("CheckCorrectDeliveryRecipeServerRpc() called with wrong parameter types!");
+                return;
+            }
+            if (plateIngredientsNetworkDataList == null)
+            {
+                DeliveryFailureClientRpc(whichDeliveryCounterIndex);
                 return;
             }
 
