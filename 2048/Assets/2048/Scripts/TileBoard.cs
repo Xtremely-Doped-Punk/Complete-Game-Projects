@@ -15,6 +15,7 @@ namespace _2048
         [SerializeField] private TileState[] tileStates;
 
         [SerializeField] private TileGrid tileGrid;
+        [SerializeField] private GridTilesSetupUI gridTilesSetup;
         private readonly List<Tile> activeTiles = new();
 
         private int maxTileValueIndex = 0;
@@ -23,14 +24,45 @@ namespace _2048
         {
             if (tileGrid == null)
                 tileGrid = GetComponentInChildren<TileGrid>();
+
+            if (gridTilesSetup == null)
+                gridTilesSetup = GetComponent<GridTilesSetupUI>();
         }
 
-        public IEnumerator InitializeBoard(int initialTileSpawnCount = 2)
+        /// <summary>
+        /// Initiallizing some random tiles within a part of the entire board at start of the game
+        /// </summary>
+        /// <param name="fraction"> fraction of the board tiles that need to initialized at start of the game</param>
+        /// <param name="setupGrid"> if the grid height or width is changed, set this paramter to true, inorder to setup UI for next game</param>
+        /// <returns></returns>
+        public IEnumerator InitializeBoard(bool setupGrid, float fraction = 1/4)
         {
+            if (setupGrid)
+            {
+                //Debug.Log("TileBoard:: SetingUp GridTiles UI!");
+                gridTilesSetup.SetupBoard();
+            }
+
+            int initialTileSpawnCount = (int)(GameManager.Instance.GridSize * fraction);
+            if (initialTileSpawnCount < 1) initialTileSpawnCount = 1;
+
             maxTileValueIndex = 0;
-            yield return new WaitUntil(() => tileGrid.IsInitialized);
+            yield return new WaitUntil(() => gridTilesSetup.IsInitialized);
+            
             for (int i = 0; i < initialTileSpawnCount; i++)
                 CreateRandomTile();
+        }
+
+        public void ClearBoard()
+        {
+            tileGrid.ClearAllTileCells();
+
+            foreach (var tile in activeTiles)
+            {
+                if (tile != null)
+                    Destroy(tile.gameObject);
+            }
+            activeTiles.Clear();
         }
 
         private void Update()
@@ -52,7 +84,7 @@ namespace _2048
             Tile tile = Instantiate(tilePrefab, transform);
             TileCell randomEmptyCell = tileGrid.GetRandomEmptyTileCell();
             tile.SpawnOnTileCell(randomEmptyCell);
-            tile.SetupTile(TwoPowX(powerIndex + 1), tileStates[powerIndex]);
+            tile.SetupTile((powerIndex + 1).TwoPowX(), tileStates[powerIndex]);
             activeTiles.Add(tile);
         }
 
@@ -71,13 +103,13 @@ namespace _2048
             {
                 if (horizontal > 0)
                 {
+                    //Debug.Log("TileBoard:: MoveTiles -> RightWards" + $" [dir:{gridDir}]");
                     // move rightwards, (skip right-most col as it is already at right, idx=gridWidth-1, thus startCol=gridWidth-2, colIncr=-1)
-                    //Debug.Log("RightWards");
                     MoveTiles(gridDir, 0, 1, GameManager.Instance.GridWidth - 2, -1);
                 }
                 else
                 {
-                    //Debug.Log("LefttWards");
+                    //Debug.Log("TileBoard:: MoveTiles -> LefttWards" + $" [dir:{gridDir}]");
                     // move leftwards, (skip left-most row as it is already at left, idx=0, thus startCol=1, colIncr=1)
                     MoveTiles(gridDir, 0, 1, 1, 1);
                 }
@@ -86,13 +118,13 @@ namespace _2048
             {
                 if (vertical > 0)
                 {
-                    //Debug.Log("UpWards");
+                    //Debug.Log("TileBoard:: MoveTiles -> UpWards" + $" [dir:{gridDir}]");
                     // move upwards, (skip top-most row as it is already at top, idx=0, thus startRow=1, rowIncr=1)
                     MoveTiles(gridDir, 1, 1, 0, 1);
                 }
                 else
                 {
-                    //Debug.Log("DownWards");
+                    //Debug.Log("TileBoard:: MoveTiles -> DownWards" + $" [dir:{gridDir}]");
                     // move downwards, (skip bottm-most row as it is already at bottom, idx=gridHeight-1, thus startRow=gridHeight-2, rowIncr=-1)
                     MoveTiles(gridDir, GameManager.Instance.GridHeight - 2, -1, 0, 1);
                 }
@@ -107,6 +139,8 @@ namespace _2048
                 for (int y = startCol; y < GameManager.Instance.GridWidth && y >= 0; y += colIncrement)
                 {
                     TileCell tileCell = tileGrid.GetTileCell(x, y);
+                    //Debug.Log($"TileBoard:: tileCell-iter({x},{y}) loop => tileCell-coor{tileCell.GetCoordinates()}");
+
                     if (tileCell != null && !tileCell.IsEmpty())
                         changed |= TryMoveSingleTile(tileCell.GetTile(), direction);
                 }
@@ -156,11 +190,16 @@ namespace _2048
 
         private bool TryMoveSingleTile(Tile tile, Vector2Int direction)
         {
+            //Debug.Log($"TileBoard:: tile\"{tile.GetTileCell().GetCoordinates()}, val:{tile.GetNumber()}\" is trying to move in dir:{direction}");
+
             TileCell changeCell = null;
             TileCell adjacentTileCell = tileGrid.GetAdjacentTileCell(tile.GetTileCell(), direction);
+            //Debug.Log($"TileBoard:: adjacentTileCell exists: {adjacentTileCell != null}");
             int max = GameManager.Instance.GridSize;
+
             while (adjacentTileCell != null && max>0)
             {
+                //Debug.Log($"TileBoard:: adjacentTileCell-iter\"{adjacentTileCell.GetCoordinates()}, isEmpty:{adjacentTileCell.IsEmpty()}\"");
                 max--;
                 if (!adjacentTileCell.IsEmpty())
                 {
@@ -188,12 +227,12 @@ namespace _2048
 
         private void MergeTiles(Tile tile, Tile adjtile)
         {
-            //Debug.Log("Merging tile:" + tile.GetTileCell().GetCoordinates() + " and adj-tile:" + adjtile.GetTileCell().GetCoordinates());
+            //Debug.Log("TileBoard:: Merging tile:" + tile.GetTileCell().GetCoordinates() + " and adj-tile:" + adjtile.GetTileCell().GetCoordinates());
             activeTiles.Remove(tile);
             tile.MergeWithCell(adjtile.GetTileCell());
 
             //int powerIndex = GetTileStateIndex(adjtile.GetTileState());
-            int powerIndex = TwoInversePowX(adjtile.GetNumber()) - 1;
+            int powerIndex = (adjtile.GetNumber()).TwoInversePowX() - 1;
             //Debug.Log(powerIndex + "==" + GetTileStateIndex(adjtile.GetTileState()));
             
             powerIndex = Mathf.Clamp(powerIndex + 1, 0, tileStates.Length - 1);
@@ -204,7 +243,7 @@ namespace _2048
                 OnMaxTileValueChanged?.Invoke(this, EventArgs.Empty);
             }
 
-            int number = TwoPowX(powerIndex + 1);
+            int number = (powerIndex + 1).TwoPowX();
             GameManager.Instance.IncrementScore(number);
             adjtile.SetupTile(number, tileStates[powerIndex]);
         }
@@ -219,32 +258,6 @@ namespace _2048
             return -1;
         }
 
-        public void ClearBoard()
-        {
-            tileGrid.ClearAllTileCells();
-
-            foreach(var tile in activeTiles)
-            {
-                Destroy(tile.gameObject);
-            }
-            activeTiles.Clear();
-        }
-
-        public static int TwoPowX(int power)
-        {
-            return (1 << power);
-        }
-        public static int TwoInversePowX(int value)
-        {
-            int power = 0;
-            while (value > 1)
-            {
-                value >>= 1;
-                power++;
-            }
-            return power;
-        }
-
-        public int GetMaxTileValue() => TwoPowX(maxTileValueIndex+1);
+        public int GetMaxTileValue() => (maxTileValueIndex+1).TwoPowX();
     }
 }

@@ -10,11 +10,14 @@ namespace _2048
     {
         private const string HIGH_TILE_VAL = "2048HighTileVal";
         private const string HIGH_SCORE = "2048HighScore";
+        private const int MIN_ROWS = 2, MIN_COLS = 2;
 
         public static GameManager Instance { get; private set; } = null;
 
-        [SerializeField] private int gridWidth = 4;
-        [SerializeField] private int gridHeight = 4;
+        [SerializeField, Tooltip("no.of rows")]
+        private int gridHeight = 4;
+        [SerializeField, Tooltip("no.of columns")] 
+        private int gridWidth = 4;
         [SerializeField, Range(0, 1)] float animationDelay = 0.1f;
 
         [SerializeField] private TileBoard board;
@@ -24,12 +27,34 @@ namespace _2048
         [SerializeField] private TextMeshProUGUI currentScoreText;
         [SerializeField] private TextMeshProUGUI highScoreText;
         [SerializeField] private TextMeshProUGUI highestTileValueText;
+        [SerializeField] private TMP_InputField NumOfRowsInp, NumOfColsInp;
 
         private int currentScore, highScore, highTileValue;
 
         private void Awake()
         {
             Instance = this;
+
+            restartBtn.onClick.AddListener(NewGame);
+            retryBtn.onClick.AddListener(NewGame);
+
+            NumOfRowsInp.text = gridHeight.ToString();
+            NumOfRowsInp.onEndEdit.AddListener((val) =>
+            {
+                if (int.TryParse(val, out int rows) && rows >= MIN_ROWS)
+                    NumOfRowsInp.text = Mathf.Abs(rows).ToString();
+                else
+                    NumOfRowsInp.text = gridHeight.ToString();
+            });
+
+            NumOfColsInp.text = gridWidth.ToString();
+            NumOfColsInp.onEndEdit.AddListener((val) =>
+            {
+                if (int.TryParse(val, out int cols) && cols >= MIN_COLS)
+                    NumOfColsInp.text = Mathf.Abs(cols).ToString();
+                else
+                    NumOfColsInp.text = gridWidth.ToString();
+            });
         }
 
         private void Start()
@@ -38,9 +63,6 @@ namespace _2048
             
             board.OnGameOver += (_, _) => GameOver();
             board.OnMaxTileValueChanged += (_, _) => UpdateUI_OnMaxTileValueChanged();
-
-            restartBtn.onClick.AddListener(NewGame);
-            retryBtn.onClick.AddListener(NewGame);
         }
 
         private void NewGame()
@@ -51,8 +73,19 @@ namespace _2048
             gameOverCanvasGroup.gameObject.SetActive(false);
             restartBtn.interactable = true; restartBtn.Select();
             board.ClearBoard();
-            StartCoroutine(board.InitializeBoard(3));
+            StartCoroutine(board.InitializeBoard(SetGridDimentions(), 1 / 3));
             board.enabled = true;
+        }
+        private bool SetGridDimentions()
+        {
+            if (!(int.TryParse(NumOfRowsInp.text, out int height) && int.TryParse(NumOfColsInp.text, out int width)))
+                return false;
+
+            if (height == gridHeight && width == gridWidth) return false;
+
+            gridHeight = height;
+            gridWidth = width;
+            return true;
         }
 
         private void GameOver()
@@ -130,9 +163,18 @@ namespace _2048
             currentScoreText.text = currentScore.ToString();
         }
 
+        /// <summary>
+        /// Total Size Grid Board (no.of rows * no. of cols)
+        /// </summary>
         public int GridSize => gridWidth * gridHeight;
-        public int GridWidth => gridWidth;
+        /// <summary>
+        /// Number of Rows in Grid Board
+        /// </summary>
         public int GridHeight => gridHeight;
+        /// <summary>
+        /// Number of Columns in Grid Board
+        /// </summary>
+        public int GridWidth => gridWidth;
         public float GetDelay() => animationDelay;
     }
 }

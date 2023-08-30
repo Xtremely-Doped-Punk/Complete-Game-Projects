@@ -7,14 +7,14 @@ namespace _2048
 {
     public class TileGrid : MonoBehaviour
     {
-        [SerializeField] private TileRow[] tileRows;
+        [SerializeField] private Tile1DArray[] tileRows;
         [SerializeField] private TileCell[] tileCells;
+        private bool isRowMajor;
 
-        public bool IsInitialized { get; private set; } = false;
-
-        public void InitializeTileGrid()
+        public void InitializeTileGrid(bool isRowMajor)
         {
-            tileRows = GetComponentsInChildren<TileRow>();
+            this.isRowMajor = isRowMajor;
+            tileRows = GetComponentsInChildren<Tile1DArray>();
             tileCells = GetComponentsInChildren<TileCell>();
 
             for (int x = 0; x < tileRows.Length; x++)
@@ -25,25 +25,29 @@ namespace _2048
                 for (int y = 0; y < tileRowCells.Length; y++)
                 {
                     //Debug.Log("col:" + y);
-                    tileRowCells[y].SetCoordinates(new Vector2Int(x, y));
+                    var coor = (isRowMajor) ? new Vector2Int(x, y) : new Vector2Int(y, x);
+                    tileRowCells[y].SetCoordinates(coor);
                 }
             }
-            IsInitialized = true;
         }
 
         public TileCell GetTileCell(int x, int y)
         {
-            if ((x >= 0 && x < GameManager.Instance.GridWidth)
-                && (y >= 0 && y < GameManager.Instance.GridHeight))
+            TileCell result = null;
+            if ((x >= 0 && x < GameManager.Instance.GridHeight)
+                && (y >= 0 && y < GameManager.Instance.GridWidth))
             {
-                //Debug.Log("Grid get tile cell:" + tileRows[x].GetTileCells()[y].GetCoordinates() + " found for dimensions (x=" + x + ",y=" + y + ")");
-                return tileRows[x].GetTileCells()[y];
+                if (isRowMajor)
+                    result = tileRows[x].GetTileCells()[y];
+                else
+                    result = tileRows[y].GetTileCells()[y];
+                //Debug.Log($"TileGrid:: GetTileCell():{result.GetCoordinates()} found for dimensions (x={x}, y={y})");
             }
             else
             {
-                //Debug.LogWarning("Grid get tile cell dimention out of bounds (x=" + x + ",y=" + y + ")");
-                return null;
+                //Debug.LogWarning("TileGrid:: GetTileCell() dimentions out of bounds (x=" + x + ",y=" + y + ")");
             }
+            return result;
         }
 
         public TileCell GetTileCell(Vector2Int coordinates) => GetTileCell(coordinates.x, coordinates.y);

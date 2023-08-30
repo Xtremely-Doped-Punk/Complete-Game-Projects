@@ -93,6 +93,9 @@ MonoBehaviour:
   state: {fileID: 0}
   cell: {fileID: 0}
   number: 0
+  background: {fileID: 0}
+  numberText: {fileID: 0}
+  OutlineOffset: {x: 0, y: 0}
 --- !u!1 &6366088315656604448
 GameObject:
   m_ObjectHideFlags: 0
@@ -162,8 +165,7 @@ MonoBehaviour:
   m_text: 2048
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc58058255288e7439b622062f788246, type: 2}
-  m_sharedMaterial: {fileID: 4824625923117905284, guid: dc58058255288e7439b622062f788246,
-    type: 2}
+  m_sharedMaterial: {fileID: 4824625923117905284, guid: dc58058255288e7439b622062f788246, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -191,7 +193,7 @@ MonoBehaviour:
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 18
+  m_fontSizeMin: 4
   m_fontSizeMax: 360
   m_fontStyle: 0
   m_HorizontalAlignment: 2

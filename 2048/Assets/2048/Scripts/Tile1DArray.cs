@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace _2048
 {
-    public class TileRow : MonoBehaviour
+    public class Tile1DArray : MonoBehaviour
     {
         [SerializeField] private TileCell[] tileCells;
 
