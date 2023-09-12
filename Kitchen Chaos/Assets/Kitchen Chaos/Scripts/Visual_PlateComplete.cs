@@ -62,7 +62,7 @@ namespace KC
         private void HandlePlateVisualOnIngredientChanged(object sender, PlateKitchenObject.IngredientsChangedEventArgs e)
         {
             int mapIndex =
-                KitchenItemSO_GameObject_Map.FindItemVisualMapIndex(kitchenItemsToVisualObjectsMap, e.ingredient.kitchenItemSO);
+                KitchenItemSO_GameObject_Map.FindItemVisualMapIndex(kitchenItemsToVisualObjectsMap, e.ingredient.KitchenItemSO);
 
             if (mapIndex == -1)
                 return;

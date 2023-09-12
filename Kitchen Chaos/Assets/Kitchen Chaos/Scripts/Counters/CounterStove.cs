@@ -68,10 +68,15 @@ namespace KC
                 else
                 {
                     // both player and counter has objects held by them, multiple objects cant be interacted at a same time
-                    if (CheckPossiblePlateInteractions(player, canCounterHoldPlate: false))
-                        ChangeStoveState(State.Idle);
+                    CheckPossiblePlateInteractions(player, canCounterHoldPlate: false);
                 }
             }
+        }
+
+        protected override void CheckPossiblePlateInteractionsServerCallback(bool havePlaveInteractionTaken)
+        {
+            if (havePlaveInteractionTaken)
+                ChangeStoveState(State.Idle);
         }
 
         private void Update()

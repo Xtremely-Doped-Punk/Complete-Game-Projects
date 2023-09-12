@@ -1843,9 +1843,6 @@ MonoBehaviour:
   spawnDeliveryTimerMax: 4
   waitingDeliveryMax: 5
   menuSO: {fileID: 11400000, guid: abac670811c0b2345b338b2e963ba728, type: 2}
-  networkDeliveryCountersList:
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &222100819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10075,7 +10072,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7aa512936c8c2644288d796171b75f82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 1206449247}
 --- !u!1001 &1209460840
 PrefabInstance:
   m_ObjectHideFlags: 0

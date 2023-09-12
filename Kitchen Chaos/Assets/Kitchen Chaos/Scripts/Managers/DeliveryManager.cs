@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -18,8 +19,9 @@ namespace KC
         [SerializeField] private float spawnDeliveryTimerMax = 4f;
         [SerializeField] private int waitingDeliveryMax = 4;
         [SerializeField] private FoodMenuSO menuSO;
-        [SerializeField] private List<CounterDelivery> networkDeliveryCountersList;
 
+        [Header("Debug")]
+        [SerializeField] private List<CounterDelivery> deliveryCountersList;
         private readonly List<DeliveryRecipeSO> waitingDeliveryRecipeSOList = new();
         private float spawnDeliveryTimer;
         public int NoOfSucessfulDeliveries { get; private set; } = 0;
@@ -30,6 +32,11 @@ namespace KC
                 Instance = this;
             else
                 Destroy(this);
+            
+            if (deliveryCountersList != null)
+                deliveryCountersList.RemoveAll(x => x == null);
+            if (deliveryCountersList.Count == 0)
+            deliveryCountersList = FindObjectsOfType<CounterDelivery>().ToList();
         }
 
         private void Start()
@@ -68,21 +75,21 @@ namespace KC
 
         private int FindDeliveryCounterIndex(CounterDelivery deliveryCounter)
         {
-            for (int i = 0; i < networkDeliveryCountersList.Count; i++)
+            for (int i = 0; i < deliveryCountersList.Count; i++)
             {
-                if (deliveryCounter == networkDeliveryCountersList[i])
+                if (deliveryCounter == deliveryCountersList[i])
                     return i;
             }
             return -1;
         }
 
-
-        [Obsolete] public bool DeliverRecipe(CounterDelivery whichDeliveryCounter, PlateKitchenObject plateKitchenObject)
+        #region single player logic, i.e. done use in multiplayer implementation
+        [Obsolete] public bool DeliverRecipe_SinglePlayer(CounterDelivery whichDeliveryCounter, PlateKitchenObject plateKitchenObject)
         {
             // single player logic direct implementation with rpc's
             for (int index = 0; index < waitingDeliveryRecipeSOList.Count; index++)
             {
-                if (CheckPlateDeliveryRecipeMatch(plateKitchenObject.GetPlateIngredientsHeldList(), index))
+                if (CheckPlateDeliveryRecipeMatch_SinglePlayer(plateKitchenObject.GetPlateIngredientsList(), index))
                 {
                     DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[index];
 
@@ -101,7 +108,7 @@ namespace KC
             return false;
         }
 
-        [Obsolete] private bool CheckPlateDeliveryRecipeMatch(IReadOnlyList<Ingredient> plateIngredientsHeldList, int deliveryRecipeIndex)
+        [Obsolete] private bool CheckPlateDeliveryRecipeMatch_SinglePlayer(IReadOnlyList<Ingredient> plateIngredientsHeldList, int deliveryRecipeIndex)
         {
             DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[deliveryRecipeIndex];
 
@@ -110,7 +117,7 @@ namespace KC
 
             foreach (Ingredient recipeIngredient in deliveryRecipeSO.IngredientsArray)
             {
-                Ingredient ingredientFound = Ingredient.FindIngredient(plateIngredientsHeldList, recipeIngredient.kitchenItemSO);
+                Ingredient ingredientFound = Ingredient.FindIngredient(plateIngredientsHeldList, recipeIngredient.KitchenItemSO);
                 if (ingredientFound == null || ingredientFound.ingredientCount != recipeIngredient.ingredientCount)
                 {
                     // if any ingredient not found or if the ingredient count doesn't match
@@ -119,26 +126,27 @@ namespace KC
             }
             return true;
         }
+        #endregion
 
         public void ClientDeliverRecipe(CounterDelivery whichDeliveryCounter, PlateKitchenObject plateKitchenObject)
         {
             int deliveryCounterIndex = FindDeliveryCounterIndex(whichDeliveryCounter);
-            Ingredient.NetworkData[] plateIngredientsNetworkDatas = plateKitchenObject.GetPlateIngredientsNetworkDatasList();
+            Ingredient[] plateIngredients = plateKitchenObject.GetPlateIngredientsList().ToArray();
 
-            CheckDeliveryRecipeServerRpc(deliveryCounterIndex, plateIngredientsNetworkDatas);
+            CheckDeliveryRecipeServerRpc(deliveryCounterIndex, plateIngredients);
         }
 
-        private bool CheckPlateDeliveryRecipeMatch(IReadOnlyList<Ingredient.NetworkData> plateIngredientsNetworkDataList, int deliveryRecipeIndex)
+        private bool CheckPlateDeliveryRecipeMatch(IReadOnlyList<Ingredient> plateIngredientsList, int deliveryRecipeIndex)
         {
             DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[deliveryRecipeIndex];
-            this.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsNetworkDataList.Count);
+            this.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsList.Count);
 
-            if (plateIngredientsNetworkDataList.Count != deliveryRecipeSO.IngredientsArray.Length) return false;
+            if (plateIngredientsList.Count != deliveryRecipeSO.IngredientsArray.Length) return false;
             // if length of recipe doesnt match, no need to check each kitchen object in them
 
             foreach (Ingredient recipeIngredient in deliveryRecipeSO.IngredientsArray)
             {
-                int ingredientFoundCount = Ingredient.NetworkData.FindIngredientCount(plateIngredientsNetworkDataList, recipeIngredient.kitchenItemSO);
+                int ingredientFoundCount = Ingredient.FindIngredientCount(plateIngredientsList, recipeIngredient.KitchenItemSO);
                 if (ingredientFoundCount != recipeIngredient.ingredientCount)
                 {
                     // if any ingredient not found or if the ingredient count doesn't match
@@ -153,14 +161,14 @@ namespace KC
         // clients also need a way to invoke them, thus by setting the attribute of requiring ownership to false
         
         [ServerRpc(RequireOwnership = false)] 
-        private void CheckDeliveryRecipeServerRpc(int whichDeliveryCounterIndex, Ingredient.NetworkData[] plateIngredientsNetworkDataList)
+        private void CheckDeliveryRecipeServerRpc(int whichDeliveryCounterIndex, Ingredient[] plateIngredientsArray)
         {
             if (whichDeliveryCounterIndex == -1)
             {
                 this.LogError("CheckCorrectDeliveryRecipeServerRpc() called with wrong parameter types!");
                 return;
             }
-            if (plateIngredientsNetworkDataList == null)
+            if (plateIngredientsArray == null)
             {
                 DeliveryFailureClientRpc(whichDeliveryCounterIndex);
                 return;
@@ -168,10 +176,9 @@ namespace KC
 
             for (int index = 0; index < waitingDeliveryRecipeSOList.Count; index++)
             {
-                if (CheckPlateDeliveryRecipeMatch(plateIngredientsNetworkDataList, index))
+                if (CheckPlateDeliveryRecipeMatch(plateIngredientsArray, index))
                 {
-                    DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[index];
-
+                    //DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[index];
                     DeliverySuccessClientRpc(whichDeliveryCounterIndex, index);
                     return;
                 }
@@ -189,7 +196,7 @@ namespace KC
             OnDeliveryOrdersChanged?.Invoke(this,
                 new OrdersChangedEventArgs { deliveryRecipeSOChanged = deliveryRecipeSO, isAdded = false });
 
-            CounterDelivery whichDeliveryCounter = networkDeliveryCountersList[whichDeliveryCounterIndex];
+            CounterDelivery whichDeliveryCounter = deliveryCountersList[whichDeliveryCounterIndex];
 
             OnDeliverySuccess?.Invoke(whichDeliveryCounter, EventArgs.Empty);
             whichDeliveryCounter.ClientInvokeEventCounterOnDeliverySuccess();
@@ -198,7 +205,7 @@ namespace KC
         [ClientRpc]
         private void DeliveryFailureClientRpc(int whichDeliveryCounterIndex)
         {
-            CounterDelivery whichDeliveryCounter = networkDeliveryCountersList[whichDeliveryCounterIndex];
+            CounterDelivery whichDeliveryCounter = deliveryCountersList[whichDeliveryCounterIndex];
 
             OnDeliveryFailure?.Invoke(whichDeliveryCounter, EventArgs.Empty);
             whichDeliveryCounter.ClientInvokeEventCounterOnDeliveryFailure();

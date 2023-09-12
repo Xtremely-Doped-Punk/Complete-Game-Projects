@@ -22,8 +22,10 @@ namespace KC
             else
                 Destroy(this);
 
-            if (audioSource==null)
+            if (audioSource == null)
                 audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+                audioSource = gameObject.AddComponent<AudioSource>();
             
             volume = PlayerPrefs.GetFloat(PLAYER_PREFS_MUSIC_VOLUME, volume); 
             audioSource.volume = volume;

@@ -53,7 +53,7 @@ namespace KC
                     plateContentsViewParentUITransform.gameObject.SetActive(true);
                 // for the first ingredient ever added make contents display by default
 
-                ingredientFound = new Ingredient { kitchenItemSO = kitchenItemSO, ingredientCount = 1 };
+                ingredientFound = new Ingredient(kitchenItemSO, 1);
                 plateIngredientsHeldList.Add(ingredientFound);
             }
 
@@ -129,16 +129,6 @@ namespace KC
 
         public bool CanDrop() => canDrop;
 
-        public IReadOnlyList<Ingredient> GetPlateIngredientsHeldList() => plateIngredientsHeldList;
-
-        public Ingredient.NetworkData[] GetPlateIngredientsNetworkDatasList()
-        {
-            Ingredient.NetworkData[] plateIngredientsNetworkDatas = new Ingredient.NetworkData[plateIngredientsHeldList.Count];
-
-            for (int i = 0; i < plateIngredientsHeldList.Count; i++)
-                plateIngredientsNetworkDatas[i] = plateIngredientsHeldList[i].GetNetworkData();
-
-            return plateIngredientsNetworkDatas;
-        }
+        public IReadOnlyList<Ingredient> GetPlateIngredientsList() => plateIngredientsHeldList;
     }
 }

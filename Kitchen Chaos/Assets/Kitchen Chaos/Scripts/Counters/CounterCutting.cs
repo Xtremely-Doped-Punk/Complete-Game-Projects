@@ -58,11 +58,18 @@ namespace KC
                 else
                 {
                     // both player and counter has objects held by them, multiple objects cant be interacted at a same time
-                    if (CheckPossiblePlateInteractions(player, canCounterHoldPlate: false))
-                        InteractSwitchPrimaryServerRpc();
+                    CheckPossiblePlateInteractions(player, canCounterHoldPlate: false);
                 }
             }
         }
+
+        // override server callback for plate interactions call back
+        protected override void CheckPossiblePlateInteractionsServerCallback(bool havePlaveInteractionTaken)
+        {
+            if (havePlaveInteractionTaken)
+                InteractSwitchPrimaryServerRpc();
+        }
+
         [ServerRpc(RequireOwnership = false)] public void InteractSwitchPrimaryServerRpc() => InteractSwitchPrimaryClientRpc();
         [ClientRpc] public  void InteractSwitchPrimaryClientRpc() => OnPlayerSwitchInteraction?.Invoke(this, EventArgs.Empty);
 

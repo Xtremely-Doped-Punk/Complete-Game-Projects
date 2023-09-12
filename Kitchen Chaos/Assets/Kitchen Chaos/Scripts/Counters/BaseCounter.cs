@@ -33,22 +33,39 @@ namespace KC
             KitchenObject.SpawnKitchenObject(newKitchenItemSO, this);
         }
 
+
         // use this contition when both player and counter has its own objects
         // keep ( checkCounterAlso = false ), if the counter cant hold plate as its kitchenObjectHeld, to save time
-        protected bool CheckPossiblePlateInteractions(PlayerController player, bool canCounterHoldPlate = true) 
-        {// returns if the interaction wass succesful or not
+        protected void CheckPossiblePlateInteractions(PlayerController player, bool canCounterHoldPlate = true) => 
+            CheckPossiblePlateInteractionsServerRpc(player, canCounterHoldPlate);
+
+        [ServerRpc(RequireOwnership = false)]
+        protected void CheckPossiblePlateInteractionsServerRpc(NetworkBehaviourReference playerBehaviourRef, bool canCounterHoldPlate = true)
+        {
+            if (!playerBehaviourRef.TryGet(out PlayerController player))
+            {
+                this.LogWarning($"Invalid {nameof(playerBehaviourRef)} passed to {nameof(CheckPossiblePlateInteractionsServerRpc)}!");
+                return;
+            }
+
+            // returns bool if the interaction wass succesful or not
+            bool returnVal;
+            // in multiplayer, will be replicated through rpc's
 
             PlateKitchenObject playerPlateKitchenObject = null, counterPlateKitchenObject = null;
             bool isPlayerKitchenObjectPlate = player.GetKitchenObject().TryGetPlate(out playerPlateKitchenObject);
             bool isCounterKitchenObjectPlate = canCounterHoldPlate && 
                 this.GetKitchenObject().TryGetPlate(out counterPlateKitchenObject);
 
-            if ((isCounterKitchenObjectPlate && isPlayerKitchenObjectPlate)
-                || (!isCounterKitchenObjectPlate && !isPlayerKitchenObjectPlate))
+            bool isBothHoldingPlateObj = (isCounterKitchenObjectPlate && isPlayerKitchenObjectPlate);
+            bool isBothHoldingKitchenObj = (!isCounterKitchenObjectPlate && !isPlayerKitchenObjectPlate);
+
+            if (isBothHoldingPlateObj || isBothHoldingKitchenObj)
             {
                 // both player and counter holds a plate or a kitchen-object
-                this.LogWarning("Counter  already holds a object!");
-                return false;
+                this.LogWarning($"Both Player[{player}] & Counter[{this}] are already holding objects! " +
+                    $"{nameof(isBothHoldingKitchenObj)}:{isBothHoldingKitchenObj}, {nameof(isBothHoldingPlateObj)}:{isBothHoldingPlateObj}");
+                returnVal = false;
             }
             else
             {
@@ -67,9 +84,38 @@ namespace KC
                 }
 
                 AddIngredientToPlate(plateKitchenObject, ingredientKitchenObjectHolder.GetKitchenObject());
-                return true;
+                returnVal = true;
             }
+
+            CheckPossiblePlateInteractionsServerCallback(returnVal);
+
+            // by default, lets notify all client through client rpc (for now not needed)
+            //CheckPossiblePlateInteractionsClientRpc(player.OwnerClientId, returnVal);
         }
+
+        #region Plate Interactions Overridable Callbacks
+        // change this logic to apply based return bool val of CheckPossiblePlateInteractionsServerRpc if any interation have taken place or not
+        protected virtual void CheckPossiblePlateInteractionsServerCallback(bool havePlaveInteractionTaken)
+        {
+            //if (!IsServer) return; // should only be executed by server
+        }
+
+        [Obsolete("not needed for now, just for easier identification marked as obsolete")]
+        [ClientRpc] // callback client rpc instead of return val
+        protected virtual void CheckPossiblePlateInteractionsClientRpc(ulong targetClientID, bool havePlaveInteractionTaken)
+        {
+            /* Example:
+            if (NetworkManager.LocalClientId == targetClientID)
+            {
+                // targeted client rpc
+            }
+            else
+            {
+                // observers that are not the resp target
+            }
+            */
+        }
+        #endregion
 
         protected static void AddIngredientToPlate(PlateKitchenObject plateKitchenObject, KitchenObject kitchenObject)
         {

@@ -24,7 +24,7 @@ namespace KC
         public void SetupIngredientIconCount(Ingredient ingredient)
         {
             this.ingredient = ingredient;
-            iconImage.sprite = ingredient.kitchenItemSO.Icon;
+            iconImage.sprite = ingredient.KitchenItemSO.Icon;
             iconText.text = ingredient.ingredientCount.ToString();
         }
 
@@ -33,7 +33,7 @@ namespace KC
             selectionBtn.onClick.AddListener(() =>
             {
                 //Debug.Log("--> ingredient single icon UI clicked! " + iconImage.sprite.name);
-                plateKitchenObject.RemoveIngredient(ingredient.kitchenItemSO, PlayerController.LocalInstance.GetSelectedCounter());
+                plateKitchenObject.RemoveIngredient(ingredient.KitchenItemSO, PlayerController.LocalInstance.GetSelectedCounter());
                 action?.Invoke();
             });
         }

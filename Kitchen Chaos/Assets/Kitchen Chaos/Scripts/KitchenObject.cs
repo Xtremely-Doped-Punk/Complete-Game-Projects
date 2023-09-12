@@ -44,7 +44,7 @@ namespace KC
         {
             if (!switchKitchenObjHolderNetworkObjRef.TryGet(out NetworkObject switchKitchenObjHolderNetworkObj))
             {
-                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolder-ServerRpc!");
+                this.LogWarning($"Invalid {nameof(switchKitchenObjHolderNetworkObjRef)} passed to {nameof(SetKitchenObjectHolderServerRpc)}!");
                 return;
             }
             
@@ -61,7 +61,7 @@ namespace KC
         {
             if (!switchKitchenObjHolderNetworkObjRef.TryGet(out NetworkObject switchKitchenObjHolderNetworkObj))
             {
-                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolderCallback-ClientRpc!");
+                this.LogWarning($"Invalid {nameof(switchKitchenObjHolderNetworkObjRef)} passed to {nameof(SetKitchenObjectHolderCallbackClientRpc)}!");
                 return;
             }
             IKitchenObjectHolder switchKitchenObjectHolder = switchKitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();

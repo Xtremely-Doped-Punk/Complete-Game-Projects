@@ -23,15 +23,19 @@ namespace KC
             {
                 this.Log("HOST!");
                 NetworkManager.Singleton.StartHost();
-                StartCoroutine(CheckConnection());
+                //StartCoroutine(CheckConnection());
             });
 
             startClientBtn.onClick.AddListener(() =>
             {
                 this.Log("CLIENT!");
                 NetworkManager.Singleton.StartClient();                
-                StartCoroutine(CheckConnection());
+                //StartCoroutine(CheckConnection());
             });
+            
+            NetworkManager.Singleton.OnClientStarted += Hide;
+            NetworkManager.Singleton.OnClientStopped += (_) => Show();
+            NetworkManager.Singleton.OnTransportFailure += Show;
         }
 
         private IEnumerator CheckConnection()

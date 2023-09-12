@@ -22,14 +22,14 @@ namespace KC
         {
             int index = Instance.networkKitchenItemsListSO.IndexOf(kitchenItemSO);
             if (index == -1)
-                Instance.LogError("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
+                Instance.LogWarning("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
             return index;
         }
         public static KitchenItemSO GetNetworkKitchenItem(int index)
         {
             KitchenItemSO kitchenItemSO = Instance.networkKitchenItemsListSO.AtIndex(index);
             if (kitchenItemSO == null)
-                Instance.LogError("KitchenItem not found, as given Network-Index is invalid!!!");
+                Instance.LogWarning("KitchenItem not found, as given Network-Index is invalid!!!");
             return kitchenItemSO;
         }
 
@@ -44,6 +44,13 @@ namespace KC
         [ServerRpc(RequireOwnership = false)] // to allow clients to call server rpc's to spawn objects as only server can spawn objects
         private void SpawnKitchenObjectServerRpc(int networkKitchenItemIndex, NetworkObjectReference kitchenObjHolderNetworkObjRef)
         {
+            // checking if the given NetworkObjectReference is valid from server end
+            if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
+            {
+                this.LogWarning($"Invalid {nameof(kitchenObjHolderNetworkObjRef)} passed to {nameof(SpawnKitchenObjectServerRpc)}!");
+                return;
+            }
+
             KitchenItemSO kitchenItemSO = GetNetworkKitchenItem(networkKitchenItemIndex);
             Transform kitchenItemTransform = Instantiate(kitchenItemSO.Prefab).transform;
 
@@ -51,13 +58,6 @@ namespace KC
 
             // this NetworkObject.Spawn() can only be called by server, thus the need of ServerRpc
             kitchenItemNetworkObj.Spawn(destroyWithScene: true); // by default, Spawn(destroyWithScene:false)
-
-            // checking if the given NetworkObjectReference is valid from server end
-            if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
-            {
-                this.LogWarning("Invalid KitchenObjHolderNetworkObjectReference passed to SpawnKitchenObject-ServerRpc!");
-                return;
-            }
 
             var kitchenObj = kitchenItemNetworkObj.GetComponent<KitchenObject>();
             IKitchenObjectHolder kitchenObjHolder = kitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
@@ -67,17 +67,16 @@ namespace KC
         }
 
 
-        public void DestroyKitchenObject(KitchenObject kitchenObject) => DestrorKitchenObjectServerRpc(kitchenObject.NetworkObject);
+        public void DestroyKitchenObject(KitchenObject kitchenObject) => DestrorKitchenObjectServerRpc(kitchenObject);
 
         [ServerRpc(RequireOwnership = false)]
-        private void DestrorKitchenObjectServerRpc(NetworkObjectReference kitchenObjNetworkObjRef)
+        private void DestrorKitchenObjectServerRpc(NetworkBehaviourReference kitchenObjBehaviourRef)
         {
-            if (!kitchenObjNetworkObjRef.TryGet(out NetworkObject kitchenObjNetworkObj))
+            if (!kitchenObjBehaviourRef.TryGet(out KitchenObject kitchenObject))
             {
-                this.LogWarning("Invalid switchKitchenObjectNetworkObjectRef passed to DestrorKitchenObject-ServerRpc!");
+                this.LogWarning($"Invalid {nameof(kitchenObjBehaviourRef)} passed to {nameof(DestrorKitchenObjectServerRpc)}!");
                 return;
             }
-            KitchenObject kitchenObject = kitchenObjNetworkObj.GetComponent<KitchenObject>();
 
             if (kitchenObject.GetKitchenObjectHolder() != null)
                 DestrorKitchenObjectCallbackClientRpc(kitchenObject.GetKitchenObjectHolder().GetNetworkObject());
@@ -90,7 +89,7 @@ namespace KC
         {
             if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
             {
-                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to DestrorKitchenObjectCallback-ClientRpc!");
+                this.LogWarning($"Invalid {nameof(kitchenObjHolderNetworkObjRef)} passed to {nameof(DestrorKitchenObjectCallbackClientRpc)}!");
                 return;
             }
             IKitchenObjectHolder kitchenObjectHolder = kitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
