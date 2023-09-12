@@ -33,9 +33,11 @@ namespace KC
             if (IsOwner) // simply add the local player to static reference
             {
                 LocalInstance = this;
-                Debug.Log("Local Player Instance Set!, instance-id:" + GetInstanceID() + "hash-code:" + GetHashCode());
+                //Debug.Log("Local Player Instance Set!, instance-id:" + GetInstanceID() + "hash-code:" + GetHashCode());
             }
             OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
+
+            name = name.Replace("Clone", $"ID:{OwnerClientId}"); // chaning the GameObject-name for easiler identification in local hierarchy
         }
         #endregion
 
@@ -78,6 +80,7 @@ namespace KC
 
         private void HandlePlayerPrimaryInteraction(object sender, EventArgs e)
         {
+            //this.Log($"Handling Player Primary Interaction: IsGamePlaying:{GameManager.Instance.IsGamePlaying}, isLookingInventory:{isLookingInventory}, selectedCounter:{selectedCounter}");
             if (!GameManager.Instance.IsGamePlaying) return;
 
             //UpdateInteractions();
@@ -268,7 +271,11 @@ namespace KC
             // else means player has dropped something (need to be called from dropped location)
         }
         public KitchenObject GetKitchenObject() => KitchenObjHeld;
-        public void ClearKitchenObject() => this.KitchenObjHeld = null;
+        public void ClearKitchenObject()
+        {
+            //Debug.Log($"Player[{name}] :: Cleared Holding Kitchen Object: {this.KitchenObjHeld}");
+            this.KitchenObjHeld = null;
+        }
         public bool HasKitchenObject() => KitchenObjHeld != null; 
         public bool CanHoldKitchenObject(KitchenItemSO kitchenItemSO) => true;
         public NetworkObject GetNetworkObject() => NetworkObject;

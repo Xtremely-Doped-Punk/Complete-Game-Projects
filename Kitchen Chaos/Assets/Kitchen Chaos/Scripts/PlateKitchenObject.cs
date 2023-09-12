@@ -34,7 +34,7 @@ namespace KC
         public void AddIngredient(KitchenObject kitchenObject)
         {
             if (TryAddIngredient(kitchenObject.KitchenItemSO))
-                kitchenObject.DestrorSelf();
+                KitchenObject.DestroyKitchenObject(kitchenObject);
         }
 
         private bool TryAddIngredient(KitchenItemSO kitchenItemSO)
@@ -74,7 +74,7 @@ namespace KC
             Ingredient ingredientFound = Ingredient.FindIngredient(plateIngredientsHeldList, kitchenItemSO);
             if (ingredientFound == null)
             {
-                Debug.LogError("Given kitchen object:" + kitchenItemSO + 
+                this.LogError("Given kitchen object:" + kitchenItemSO + 
                     " is not found as a ingredient at the plate:" + this);
                 return;
             }

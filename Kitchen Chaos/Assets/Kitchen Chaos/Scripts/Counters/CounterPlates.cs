@@ -78,7 +78,7 @@ namespace KC
 
             if (player.HasKitchenObject())
             {
-                Debug.LogWarning("Player:" + player + " already holds a object!");
+                this.LogWarning("Player:" + player + " already holds a object!");
             }
             else
             {

@@ -23,7 +23,7 @@ namespace KC
             {
                 hasProgress = hasProgressTransform.GetComponentInParent<IHasProgressBar>();
                 if (hasProgress == null)
-                    Debug.LogError("given reference to 'hasProgressTransform':" + hasProgressTransform +
+                    this.LogError("Given reference to 'hasProgressTransform':" + hasProgressTransform +
                         " does'nt have any class implementing IProgressBar interface!");
             }
 
@@ -34,6 +34,7 @@ namespace KC
 
         private void HandleProgressVisualsOnChanged(object sender, IHasProgressBar.ProgessChangedEventArg e)
         {
+            //Debug.Log($"Progress changed to {e.progressNormalized}");
             ParentSetActive(HideProgressOnExtremes && !(e.progressNormalized <= 0f || e.progressNormalized >= 1f));
             progressBarImage.fillAmount = e.progressNormalized;
         }

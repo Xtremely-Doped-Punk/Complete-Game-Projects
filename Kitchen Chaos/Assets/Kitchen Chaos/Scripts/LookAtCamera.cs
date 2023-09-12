@@ -8,6 +8,7 @@ namespace KC
     {
         private enum Mode { LookAtRegular, CameraForwardRegular, LookAtInverted,  CameraForwardInverted}
         [SerializeField] private Mode mode;
+        [Tooltip("Set true to automatically handle \"Regular\" and \"Inverted\" modes based on the rotation ranges provided")]
         [SerializeField] private bool autoHandleInversion = true;
         [SerializeField] private Vector2Int parentRegularYRotationRange = new Vector2Int(90, 270);
         [SerializeField] private bool autoHandleInversionEveryFrame = false;

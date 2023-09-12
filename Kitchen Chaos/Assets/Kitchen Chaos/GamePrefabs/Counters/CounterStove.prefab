@@ -672,6 +672,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: CounterStove
       objectReference: {fileID: 0}
+    - target: {fileID: 7268419409731855898, guid: b9da05a8ecadf61499c0ee2c00f627e2,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 951099334
+      objectReference: {fileID: 0}
     - target: {fileID: 7272728206982399694, guid: b9da05a8ecadf61499c0ee2c00f627e2,
         type: 3}
       propertyPath: m_LocalPosition.z

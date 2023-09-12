@@ -25,7 +25,7 @@ namespace KC
                 */
 
                 DeliveryManager.Instance.ClientDeliverRecipe(this, playerPlateKitchenObject);
-                playerPlateKitchenObject.DestrorSelf();
+                KitchenObject.DestroyKitchenObject(playerPlateKitchenObject);
             }
             else
             {
@@ -37,13 +37,13 @@ namespace KC
         public void ClientInvokeEventCounterOnDeliverySuccess()
         {
             // accept delivery
-            Debug.Log("Delivery acccepted :)");
+            this.Log("Delivery acccepted :)");
             CounterOnDeliverySuccess?.Invoke(this, EventArgs.Empty);
         }
         public void ClientInvokeEventCounterOnDeliveryFailure()
         {
             // reject delivery
-            Debug.Log("Delivery rejected :(");
+            this.Log("Delivery rejected :(");
             CounterOnDeliveryFailure?.Invoke(this, EventArgs.Empty);
         }
 

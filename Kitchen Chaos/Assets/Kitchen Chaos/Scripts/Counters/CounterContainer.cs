@@ -17,10 +17,12 @@ namespace KC
         {
             if (player.HasKitchenObject())
             {
-                Debug.LogWarning("Player:"+player+" already holds a object!");
+                this.LogWarning($"Player:{player} already holds a object!");
             }
             else
             {
+                //this.Log($"Player:{player} has picked up a KitchenItem:{spawnKitchenItemSO.UniqueName}!");
+
                 // spawn onto player's holder as counter shouldn't have in it holder
                 KitchenObject.SpawnKitchenObject(spawnKitchenItemSO, player);
 

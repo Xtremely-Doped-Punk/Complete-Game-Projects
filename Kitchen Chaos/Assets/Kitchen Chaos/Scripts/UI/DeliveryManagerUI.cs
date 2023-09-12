@@ -72,7 +72,7 @@ namespace KC
                 }
                 else
                 {
-                    Debug.Log("order:" + e.deliveryRecipeSOChanged + " not found in delivery manager ui, something went wrong!!");
+                    this.Log("Order:" + e.deliveryRecipeSOChanged + " not found in delivery manager ui, something went wrong!!");
                 }
             }
         }

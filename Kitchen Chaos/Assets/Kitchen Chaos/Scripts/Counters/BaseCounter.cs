@@ -24,12 +24,12 @@ namespace KC
         public virtual void InteractSecondary(PlayerController player)
         {
             // all counters need not neccessarily have multiple interactions
-            Debug.LogWarning("No Secondary Interaction set for this counter: " + this);
+            this.LogWarning("No Secondary Interaction set for this counter!");
         }
 
         protected void SwitchNewKitchenObject(KitchenItemSO newKitchenItemSO)
         {
-            GetKitchenObject().DestrorSelf();
+            KitchenObject.DestroyKitchenObject(GetKitchenObject());
             KitchenObject.SpawnKitchenObject(newKitchenItemSO, this);
         }
 
@@ -47,7 +47,7 @@ namespace KC
                 || (!isCounterKitchenObjectPlate && !isPlayerKitchenObjectPlate))
             {
                 // both player and counter holds a plate or a kitchen-object
-                Debug.LogWarning("Counter:" + this + "  already holds a object!");
+                this.LogWarning("Counter  already holds a object!");
                 return false;
             }
             else

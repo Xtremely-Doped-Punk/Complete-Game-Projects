@@ -131,7 +131,7 @@ namespace KC
         private bool CheckPlateDeliveryRecipeMatch(IReadOnlyList<Ingredient.NetworkData> plateIngredientsNetworkDataList, int deliveryRecipeIndex)
         {
             DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[deliveryRecipeIndex];
-            Debug.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsNetworkDataList.Count);
+            this.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsNetworkDataList.Count);
 
             if (plateIngredientsNetworkDataList.Count != deliveryRecipeSO.IngredientsArray.Length) return false;
             // if length of recipe doesnt match, no need to check each kitchen object in them
@@ -157,7 +157,7 @@ namespace KC
         {
             if (whichDeliveryCounterIndex == -1)
             {
-                Debug.LogError("CheckCorrectDeliveryRecipeServerRpc() called with wrong parameter types!");
+                this.LogError("CheckCorrectDeliveryRecipeServerRpc() called with wrong parameter types!");
                 return;
             }
             if (plateIngredientsNetworkDataList == null)

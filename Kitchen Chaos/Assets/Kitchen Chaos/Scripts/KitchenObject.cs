@@ -27,12 +27,12 @@ namespace KC
         {
             if (switchKitchenObjectHolder == null)
             {
-                Debug.LogError("Cant place at null KitchenObjectHolder!");
+                this.LogError("Cant place at null KitchenObjectHolder!");
                 return;
             }
             if (switchKitchenObjectHolder.HasKitchenObject())
             {
-                Debug.LogError("Cant place at " + switchKitchenObjectHolder + " as it already holds a object!");
+                this.LogError("Cant place at " + switchKitchenObjectHolder + " as it already holds a object!");
                 return;
             }
 
@@ -44,7 +44,7 @@ namespace KC
         {
             if (!switchKitchenObjHolderNetworkObjRef.TryGet(out NetworkObject switchKitchenObjHolderNetworkObj))
             {
-                Debug.Log("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolder-ServerRpc!");
+                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolder-ServerRpc!");
                 return;
             }
             
@@ -61,7 +61,7 @@ namespace KC
         {
             if (!switchKitchenObjHolderNetworkObjRef.TryGet(out NetworkObject switchKitchenObjHolderNetworkObj))
             {
-                Debug.Log("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolderCallback-ClientRpc!");
+                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolderCallback-ClientRpc!");
                 return;
             }
             IKitchenObjectHolder switchKitchenObjectHolder = switchKitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
@@ -96,32 +96,16 @@ namespace KC
             followTransform.SetTargetTransform(switchKitchenObjectHolder.GetHolderTransform(), shouldUpdateRotation);
         }
 
-
-        public void DestrorSelf() => DestrorSelfServerRpc();
-
-        [ServerRpc(RequireOwnership = false)]
-        private void DestrorSelfServerRpc()
+        //[Server only call]
+        public void DestrorSelf()
         {
-            if (kitchenObjectHolder != null)
-                DestrorSelfCallbackClientRpc(kitchenObjectHolder.GetNetworkObject()); 
-            // need to update this before destroy
-
-            Destroy(gameObject, 1); // for testing same, just add a delay, so that client's holder's can sync
-        }
-
-        [ClientRpc]
-        private void DestrorSelfCallbackClientRpc(NetworkObjectReference kitchenObjHolderNetworkObjRef)
-        {
-            if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
+            if (!IsServer)
             {
-                Debug.Log("Invalid switchKitchenObjectHolderNetworkObjectRef passed to SetKitchenObjectHolderCallback-ClientRpc!");
+                this.LogWarning("KitchenObj DestroySelf() should only be called from server end!");
                 return;
             }
-            IKitchenObjectHolder kitchenObjectHolder = kitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
 
-            kitchenObjectHolder.ClearKitchenObject(); // remove reference from parent holder
-            // trash counter deletes any object tats been set to it, in that case,
-            // 'kitchenObjectHolder' might still be uninitialized
+            Destroy(gameObject); // for testing same, just add a delay, so that client's holder's can sync
         }
 
 
@@ -134,6 +118,10 @@ namespace KC
             */
 
             MultiplayerManager.Instance.SpawnKitchenObject(kitchenItemSO, kitchenObjHolder);
+        }
+        public static void DestroyKitchenObject(KitchenObject kitchenObject)
+        {
+            MultiplayerManager.Instance.DestroyKitchenObject(kitchenObject);
         }
 
         public bool TryGetPlate(out PlateKitchenObject plateKitchenObject)

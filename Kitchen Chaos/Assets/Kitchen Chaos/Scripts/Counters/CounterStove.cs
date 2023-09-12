@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace KC
@@ -15,9 +16,19 @@ namespace KC
 
         [SerializeField] private FryingRecipeSO[] cuttingRecipeSOArray;
 
-        private float fryingTimer;
-        private State stoveState = State.Idle;
-        private FryingRecipeSO currentFryingRecipeSO;
+        private NetworkVariable<float> fryingTimer = new(0f);
+        private NetworkVariable<State> stoveState = new(State.Idle);
+        private NetworkVariable<int> currentFryingRecipeSOIndex = new(-1);
+        [ServerRpc(RequireOwnership = false)] private void SetFryingRecipeSOIndexServerRpc(int val) => currentFryingRecipeSOIndex.Value = val;
+        private FryingRecipeSO currentFryingRecipeSO
+        {
+            get
+            {
+                if (currentFryingRecipeSOIndex.Value <= -1 || currentFryingRecipeSOIndex.Value >= cuttingRecipeSOArray.Length)
+                    return null;
+                return cuttingRecipeSOArray[currentFryingRecipeSOIndex.Value];
+            }
+        }
 
         public override void InteractPrimary(PlayerController player)
         {
@@ -27,14 +38,16 @@ namespace KC
                 if (player.HasKitchenObject())
                 {
                     KitchenObject playerKitchenObj = player.GetKitchenObject();
-                    if (TryFindingFryingRecipe(playerKitchenObj.KitchenItemSO, out currentFryingRecipeSO))
+                    if (TryFindingFryingRecipe(playerKitchenObj.KitchenItemSO, out int FryingRecipeSOIndex))
                     {
+                        SetFryingRecipeSOIndexServerRpc(FryingRecipeSOIndex);
+
                         // player is carrying some kitchen object that can be fried
                         playerKitchenObj.SetKitchenObjectHolder(this); // place object on counter
-                        InitiateFrying();
+                        InitiateFryingServerRpc();
                     }
                     else
-                        Debug.LogWarning("Player kitchen-object:" + playerKitchenObj + " doesnt have frying recipe defined.");
+                        this.LogWarning("Player kitchen-object:" + playerKitchenObj + " doesnt have frying recipe defined.");
                 }
                 else
                 {
@@ -50,7 +63,7 @@ namespace KC
                     this.GetKitchenObject().SetKitchenObjectHolder(player); // take object on counter
 
                     ChangeStoveState(State.Idle);
-                    if (currentFryingRecipeSO != null) currentFryingRecipeSO = null;
+                    if (currentFryingRecipeSOIndex.Value != -1) SetFryingRecipeSOIndexServerRpc(-1);
                 }
                 else
                 {
@@ -63,37 +76,40 @@ namespace KC
 
         private void Update()
         {
+            if (!IsServer) return; // Server Only Update CallBack
+
             if (!HasKitchenObject())
                 return; // there is no kitch object in this counter
 
             // there is some kitch object already in this counter
-            if (stoveState == State.Idle || stoveState == State.Burnt)
+            if (stoveState.Value == State.Idle || stoveState.Value == State.Burnt)
                 return; // fried completely until reciepe chain is over
 
             float currentFryingTimerMax = currentFryingRecipeSO.FryingTimerMax;
             ProgressUpdate(currentFryingTimerMax);
 
-            if (fryingTimer >= currentFryingTimerMax)
+            if (fryingTimer.Value >= currentFryingTimerMax)
             {
                 ChangeFryingState();
             }
         }
 
-        private bool TryFindingFryingRecipe(KitchenItemSO inpKitchenItemSO, out FryingRecipeSO matchFryingRecipeSO)
+        private bool TryFindingFryingRecipe(KitchenItemSO inpKitchenItemSO, out int matchFryingRecipeSOIndex)
         {
-            matchFryingRecipeSO = null;
-            foreach (FryingRecipeSO fryingRecipeSO in cuttingRecipeSOArray)
+            matchFryingRecipeSOIndex = -1;
+            for (int i=0; i<cuttingRecipeSOArray.Length; i++)
             {
-                if (fryingRecipeSO.InputKitchenItemSO == inpKitchenItemSO)
+                if (cuttingRecipeSOArray[i].InputKitchenItemSO == inpKitchenItemSO)
                 {
-                    matchFryingRecipeSO = fryingRecipeSO;
+                    matchFryingRecipeSOIndex = i;
                     return true;
                 }
             }
             return false;
         }
 
-        private void InitiateFrying()
+        [ServerRpc(RequireOwnership = false)]
+        private void InitiateFryingServerRpc()
         {
             ChangeStoveState(currentFryingRecipeSO.InFryingState);
         }
@@ -103,39 +119,62 @@ namespace KC
             KitchenItemSO endKitchenItemSO = currentFryingRecipeSO.OutputKitchenItemSO;
             SwitchNewKitchenObject(endKitchenItemSO);
             ChangeStoveState(currentFryingRecipeSO.OutFryingState);
-
-            if (TryFindingFryingRecipe(endKitchenItemSO, out currentFryingRecipeSO))
-                InitiateFrying();
+            if (TryFindingFryingRecipe(endKitchenItemSO, out int FryingRecipeSOIndex))
+            {
+                SetFryingRecipeSOIndexServerRpc(FryingRecipeSOIndex);
+                InitiateFryingServerRpc();
+            }
         }
 
+        #region ChangeStoveState()
+        private void Start()
+        {
+            stoveState.OnValueChanged += ClientOnChangeStoveStateChanged;
+        }
         private void ChangeStoveState(State state)
         {
-            stoveState = state;
-            OnStoveStateChanged?.Invoke(this, EventArgs.Empty);
+            ChangeStoveStateServerRpc(state);
+        }
+        [ServerRpc(RequireOwnership = false)]
+        private void ChangeStoveStateServerRpc(State state)
+        {
+            stoveState.Value = state;
             ProgressUpdate();
         }
-
+        private void ClientOnChangeStoveStateChanged(State oldState, State newState)
+        {
+            OnStoveStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+        #endregion
+        #region ProgressUpdate()
         private void ProgressUpdate(float ProgressMax = 0)
         {
-            if (ProgressMax > 0)
+            ProgressUpdateServerRpc(ProgressMax);
+        }
+        [ServerRpc(RequireOwnership = false)]
+        private void ProgressUpdateServerRpc(float ProgressMax = 0)
+        {
+            float progressNormalized = 0f;
+            if (ProgressMax > 0) // update
             {
-                // update
-                fryingTimer += Time.deltaTime;
-
-                OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
-                { progressNormalized = fryingTimer / ProgressMax });
+                fryingTimer.Value += Time.deltaTime;
+                progressNormalized = (float)fryingTimer.Value / ProgressMax;
             }
             else
-            {
-                // reset
-                fryingTimer = 0f;
-                OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
-                { progressNormalized = 0f });
-            }
+                fryingTimer.Value = 0;
+
+            ProgressUpdateClientRpc(progressNormalized);
         }
+        [ClientRpc]
+        private void ProgressUpdateClientRpc(float ProgressNormalized)
+        {
+            OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
+            { progressNormalized = ProgressNormalized });
+        }
+        #endregion
 
         public bool IsGoingToBurn => (currentFryingRecipeSO != null) && currentFryingRecipeSO.OutFryingState == State.Burnt;
-        public bool IsFrying => !(stoveState == State.Idle || stoveState == State.Burnt);
+        public bool IsFrying => !(stoveState.Value == State.Idle || stoveState.Value == State.Burnt);
 
         public override bool CanHoldKitchenObject(KitchenItemSO kitchenItemSO)
         {

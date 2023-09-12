@@ -24,7 +24,7 @@ namespace KC
         private void Awake()
         {
             if (counterStove == null)
-                Debug.Log("Counter Stove reference not set to Visual Script:" + this);
+                this.Log("Counter Stove reference not set to Visual Script");
 
             if (audioSource == null)
                 audioSource = counterStove.GetHolderTransform().gameObject.AddComponent<AudioSource>();
@@ -65,7 +65,8 @@ namespace KC
 
         private void HandleStoveVisualsOnStoveStateChanged(object sender, EventArgs e)
         {
-            bool isFrying = counterStove.IsFrying;
+            // make sure this local refernce is used after the latest update of CounterStove.State is reflected
+            bool isFrying = counterStove.IsFrying; //this.Log("HandleStoveVisualsOnStoveStateChanged - IsFrying:" + isFrying);
 
             VisualsSetActive(isFrying);
             progressBar.gameObject.SetActive(isFrying);

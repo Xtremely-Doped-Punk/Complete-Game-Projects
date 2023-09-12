@@ -10,25 +10,45 @@ namespace KC
     {
         [SerializeField] private Button startHostBtn;
         [SerializeField] private Button startClientBtn;
+        [SerializeField] private CanvasGroup netcodeCanvasGroup;
+        [SerializeField] private float maxRetryConnTimer = 3;
+        private float retryConnTimer;
 
         private void Awake()
         {
+            if (netcodeCanvasGroup == null)
+                netcodeCanvasGroup = GetComponent<CanvasGroup>();
+
             startHostBtn.onClick.AddListener(() =>
             {
-                Debug.Log("HOST!");
+                this.Log("HOST!");
                 NetworkManager.Singleton.StartHost();
-                Hide();
+                StartCoroutine(CheckConnection());
             });
 
             startClientBtn.onClick.AddListener(() =>
             {
-                Debug.Log("CLIENT!");
-                NetworkManager.Singleton.StartClient();
-                Hide();
+                this.Log("CLIENT!");
+                NetworkManager.Singleton.StartClient();                
+                StartCoroutine(CheckConnection());
             });
         }
 
-        private void Hide() => gameObject.SetActive(false);
-        private void Show() => gameObject.SetActive(true);
+        private IEnumerator CheckConnection()
+        {
+            Hide();
+            retryConnTimer = 0f;
+            while (retryConnTimer < maxRetryConnTimer)
+            {
+                if (NetworkManager.Singleton.IsListening)
+                    yield break;
+                yield return new WaitForEndOfFrame();
+                retryConnTimer += Time.deltaTime;
+            }
+            Show();
+        }
+
+        private void Hide() => netcodeCanvasGroup.alpha = 0f;
+        private void Show() => netcodeCanvasGroup.alpha = 1f;
     }
 }

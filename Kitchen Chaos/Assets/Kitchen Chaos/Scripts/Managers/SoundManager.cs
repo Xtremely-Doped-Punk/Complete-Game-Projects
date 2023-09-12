@@ -54,7 +54,7 @@ namespace KC
             if (sender is Component)
                 return (sender as Component).transform.position;
             else
-                Debug.LogError("Given sender-object:" + sender + 
+                this.LogError("Given sender-object:" + sender + 
                     " is not component type, thus transform component cant be found!");
             return Vector3.zero;
         }
@@ -73,6 +73,7 @@ namespace KC
                 volumeMultiplier = Mathf.Clamp(volumeMultiplier, 0f, 1f);
 
             AudioSource.PlayClipAtPoint(audioClip, position, volumeMultiplier * volume);
+            //Debug.Log($"SoundManager :: Playing {audioClip} at position {position}");
         }
 
         public void PlayPlayerFootSteps(Vector3 position)

@@ -38,7 +38,7 @@ namespace KC
 
             public static int FindIngredientCount(IReadOnlyList<NetworkData> networkDatas, KitchenItemSO kitchenItemSO)
             {
-                int networkKitchenItemIndex = MultiplayerManager.Instance.GetNetworkKitchenItemIndex(kitchenItemSO);
+                int networkKitchenItemIndex = MultiplayerManager.GetNetworkKitchenItemIndex(kitchenItemSO);
                 return FindIngredientCount(networkDatas, networkKitchenItemIndex);
             }
 
@@ -72,7 +72,7 @@ namespace KC
         {
             return new NetworkData 
             { 
-                networkKitchenItemIndex = MultiplayerManager.Instance.GetNetworkKitchenItemIndex(kitchenItemSO), 
+                networkKitchenItemIndex = MultiplayerManager.GetNetworkKitchenItemIndex(kitchenItemSO), 
                 ingredientCount = ingredientCount 
             };
         }

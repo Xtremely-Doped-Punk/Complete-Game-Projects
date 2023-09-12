@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace KC
@@ -20,7 +21,7 @@ namespace KC
         public event EventHandler OnPlayerSwitchInteraction; // primary interaction event
 
         [SerializeField] private CuttingRecipeSO[] cuttingRecipeSOArray;
-        private int cuttingProgress;
+        private NetworkVariable<int> cuttingProgress = new(0);
 
         public override void InteractPrimary(PlayerController player)
         {
@@ -30,15 +31,15 @@ namespace KC
                 if (player.HasKitchenObject())
                 {
                     KitchenObject playerKitchenObj = player.GetKitchenObject();
-                    if (TryFindingCuttingRecipe(playerKitchenObj.KitchenItemSO, out CuttingRecipeSO cuttingRecipeSO))
+                    if (TryFindingCuttingRecipe(playerKitchenObj.KitchenItemSO, out _))
                     {
                         // player is carrying some kitchen object that can be cut
                         playerKitchenObj.SetKitchenObjectHolder(this); // place object on counter
                         ProgressUpdate();
-                        OnPlayerSwitchInteraction?.Invoke(this, EventArgs.Empty);
+                        InteractSwitchPrimaryServerRpc();
                     }
                     else
-                        Debug.LogWarning("Player kitchen-object:" + playerKitchenObj + " doesnt have cutting recipe defined.");
+                        this.LogWarning($"Player kitchen-object: {playerKitchenObj} doesnt have cutting recipe defined.");
                 }
                 else
                 {
@@ -52,69 +53,91 @@ namespace KC
                 {
                     // player is not carrying anything
                     this.GetKitchenObject().SetKitchenObjectHolder(player); // take object on counter
-                    OnPlayerSwitchInteraction?.Invoke(this, EventArgs.Empty);
+                    InteractSwitchPrimaryServerRpc();
                 }
                 else
                 {
                     // both player and counter has objects held by them, multiple objects cant be interacted at a same time
                     if (CheckPossiblePlateInteractions(player, canCounterHoldPlate: false))
-                        OnPlayerSwitchInteraction?.Invoke(this, EventArgs.Empty);
+                        InteractSwitchPrimaryServerRpc();
                 }
             }
         }
+        [ServerRpc(RequireOwnership = false)] public void InteractSwitchPrimaryServerRpc() => InteractSwitchPrimaryClientRpc();
+        [ClientRpc] public  void InteractSwitchPrimaryClientRpc() => OnPlayerSwitchInteraction?.Invoke(this, EventArgs.Empty);
+
         public override void InteractSecondary(PlayerController player)
         {
-            if (HasKitchenObject())
-            {
-                // there is some kitch object already in this counter
-                KitchenObject thisKitchenObj = GetKitchenObject();
-
-                if (!TryFindingCuttingRecipe(thisKitchenObj.KitchenItemSO, out CuttingRecipeSO cuttingRecipeSO))
-                {
-                    Debug.LogWarning("This kitchen-object:" + thisKitchenObj + " has already been cut.");
-                    return;
-                }
-
-                ProgressUpdate(cuttingRecipeSO.CuttingProgressMax);
-
-                if (cuttingProgress >= cuttingRecipeSO.CuttingProgressMax)
-                {
-                    SwitchNewKitchenObject(cuttingRecipeSO.OutputKitchenItemSO);
-                }
-            }
-            else
-            {
+            if (HasKitchenObject()) // local check
+                InteractSecondaryServerRpc();
+            //else
                 // there is no kitch object in this counter
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void InteractSecondaryServerRpc()
+        {
+            if (!HasKitchenObject()) // server check
+            {
+                this.LogWarning("Invalid InteractSecondaryServerRpc Callback made!");
+                return;
+            }
+            // there is some kitch object already in this counter
+            KitchenObject thisKitchenObj = GetKitchenObject();
+
+            if (!TryFindingCuttingRecipe(thisKitchenObj.KitchenItemSO, out int cuttingRecipeSOIndex))
+            {
+                this.Log("This kitchen-object:" + thisKitchenObj + " has already been cut.");
+                return;
+            }
+
+            var cuttingRecipeSO = cuttingRecipeSOArray[cuttingRecipeSOIndex];
+            ProgressUpdate(cuttingRecipeSO.CuttingProgressMax); // server itself runs the other server-rpc
+
+            if (cuttingProgress.Value >= cuttingRecipeSO.CuttingProgressMax)
+            {
+                // server itself runs the server-rpc calls only once rather than mutiple times from each client-rpc
+                SwitchNewKitchenObject(cuttingRecipeSO.OutputKitchenItemSO);
             }
         }
 
         private void ProgressUpdate(float ProgressMax = 0)
         {
-            if (ProgressMax > 0)
-            {
-                // update
-                cuttingProgress++; OnAnyCut?.Invoke(this, EventArgs.Empty);
-
-                OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
-                { progressNormalized = (float)cuttingProgress / ProgressMax });
-            }
-            else
-            {
-                // reset
-                cuttingProgress = 0;
-                OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
-                { progressNormalized = 0f });
-            }
+            ProgressUpdateServerRpc(ProgressMax);
         }
 
-        private bool TryFindingCuttingRecipe(KitchenItemSO inpKitchenItemSO, out CuttingRecipeSO matchCuttingRecipeSO)
+        [ServerRpc(RequireOwnership = false)]
+        private void ProgressUpdateServerRpc(float ProgressMax = 0)
         {
-            matchCuttingRecipeSO = null;
-            foreach (CuttingRecipeSO cuttingRecipeSO in cuttingRecipeSOArray)
+            float progressNormalized = 0f;
+            if (ProgressMax > 0) // update
             {
-                if (cuttingRecipeSO.InputKitchenItemSO == inpKitchenItemSO)
+                cuttingProgress.Value++;
+                progressNormalized = (float)cuttingProgress.Value / ProgressMax;
+            }
+            else
+                cuttingProgress.Value = 0;
+
+            ProgressUpdateClientRpc(progressNormalized);
+        }
+        [ClientRpc]
+        private void ProgressUpdateClientRpc(float ProgressNormalized)
+        {
+            if (ProgressNormalized > 0)
+                OnAnyCut?.Invoke(this, EventArgs.Empty);
+
+            OnProgessChanged?.Invoke(this, new IHasProgressBar.ProgessChangedEventArg
+            { progressNormalized = ProgressNormalized });
+        }
+
+        private bool TryFindingCuttingRecipe(KitchenItemSO inpKitchenItemSO, out int matchCuttingRecipeSOIndex)
+        {
+            matchCuttingRecipeSOIndex = -1;
+            for (int i = 0; i < cuttingRecipeSOArray.Length; i++)
+            {
+                if (cuttingRecipeSOArray[i].InputKitchenItemSO == inpKitchenItemSO)
                 {
-                    matchCuttingRecipeSO = cuttingRecipeSO;
+                    matchCuttingRecipeSOIndex = i;
                     return true;
                 }
             }

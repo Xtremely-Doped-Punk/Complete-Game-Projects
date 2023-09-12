@@ -41,7 +41,7 @@ namespace KC
         {
             if (Instance == null)
                 Instance = this;
-            else
+            else if (Instance != this)
                 Destroy(this);
 
             InpAct = new();
@@ -57,7 +57,11 @@ namespace KC
             InpAct.Player.Pause.performed += PlayerPause;
         }
 
-        private void PlayerPrimaryInteraction(InputAction.CallbackContext obj) => OnPrimaryInteractAction?.Invoke(this, EventArgs.Empty);
+        private void PlayerPrimaryInteraction(InputAction.CallbackContext obj) 
+        {
+            //this.Log($"PlayerPrimaryInteraction input triggered, IsNull:{OnPrimaryInteractAction==null} InvocationList.Length:{OnPrimaryInteractAction.GetInvocationList().Length}");
+            OnPrimaryInteractAction?.Invoke(this, EventArgs.Empty); 
+        }
         private void PlayerSecondaryInteraction(InputAction.CallbackContext obj) => OnSecondaryInteractAction?.Invoke(this, EventArgs.Empty);
         private void PlayerInventoryView(InputAction.CallbackContext obj) => OnInventoryInteractAction?.Invoke(this, EventArgs.Empty);
         private void PlayerPause(InputAction.CallbackContext obj) => OnPauseAction?.Invoke(this, EventArgs.Empty);
@@ -125,13 +129,13 @@ namespace KC
             InputAction inputAction = GetInputAction(binding);
             int binding_index = GetBindingIndex(inputAction, platform, binding);
 
-            Debug.Log("Rebinding started for platform:" + platform + " ,binding:" + binding);
+            this.Log("Rebinding started for platform:" + platform + " ,binding:" + binding);
 
             inputAction.PerformInteractiveRebinding(binding_index).OnComplete(callback =>
             {
                 // callback when action is rebinded (here we are passing callback as lambda fn)
-                Debug.Log("Previous Binding: " + callback.action.bindings[binding_index].path);
-                Debug.Log("Current Binding: " + callback.action.bindings[binding_index].overridePath);
+                this.Log("Previous Binding: " + callback.action.bindings[binding_index].path);
+                this.Log("Current Binding: " + callback.action.bindings[binding_index].overridePath);
 
                 /* in previous version of input system, 
                 after rebinding, callback need to be manually disposed orelse it might throw memory leak error
@@ -213,7 +217,7 @@ namespace KC
             InputAction inputAction = GetInputAction(binding);
             if (inputAction == null)
             {
-                Debug.LogError("Input-Action not defined for given binding:" + binding);
+                this.LogError("Input-Action not defined for given binding:" + binding);
                 return null;
             }
             else

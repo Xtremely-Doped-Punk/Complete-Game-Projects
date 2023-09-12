@@ -14,22 +14,22 @@ namespace KC
         {
             if (Instance == null)
                 Instance = this;
-            else
+            else if (Instance != this)
                 Destroy(this);
         }
 
-        public int GetNetworkKitchenItemIndex(KitchenItemSO kitchenItemSO)
+        public static int GetNetworkKitchenItemIndex(KitchenItemSO kitchenItemSO)
         {
-            int index = networkKitchenItemsListSO.IndexOf(kitchenItemSO);
+            int index = Instance.networkKitchenItemsListSO.IndexOf(kitchenItemSO);
             if (index == -1)
-                Debug.LogError("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
+                Instance.LogError("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
             return index;
         }
-        public KitchenItemSO GetNetworkKitchenItem(int index)
+        public static KitchenItemSO GetNetworkKitchenItem(int index)
         {
-            KitchenItemSO kitchenItemSO = networkKitchenItemsListSO.AtIndex(index);
+            KitchenItemSO kitchenItemSO = Instance.networkKitchenItemsListSO.AtIndex(index);
             if (kitchenItemSO == null)
-                Debug.LogError("KitchenItem not found, as given Network-Index is invalid!!!");
+                Instance.LogError("KitchenItem not found, as given Network-Index is invalid!!!");
             return kitchenItemSO;
         }
 
@@ -37,6 +37,7 @@ namespace KC
         public void SpawnKitchenObject(KitchenItemSO kitchenItemSO, IKitchenObjectHolder kitchenObjHolder)
         {
             int networkKitchenItemIndex = GetNetworkKitchenItemIndex(kitchenItemSO);
+            //this.Log($"Spawning KitchenObject: {kitchenItemSO.UniqueName} on Holder: {kitchenObjHolder}");
             SpawnKitchenObjectServerRpc(networkKitchenItemIndex, kitchenObjHolder.GetNetworkObject());
         }
 
@@ -54,14 +55,49 @@ namespace KC
             // checking if the given NetworkObjectReference is valid from server end
             if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
             {
-                Debug.Log("Invalid KitchenObjHolderNetworkObjectReference passed to SpawnKitchenObject-ServerRpc!");
+                this.LogWarning("Invalid KitchenObjHolderNetworkObjectReference passed to SpawnKitchenObject-ServerRpc!");
                 return;
             }
 
             var kitchenObj = kitchenItemNetworkObj.GetComponent<KitchenObject>();
             IKitchenObjectHolder kitchenObjHolder = kitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
+            //this.Log($"Spawning[ServerRpc] KitchenObject: {kitchenItemSO.UniqueName} on Holder: {kitchenObjHolder}");
 
             kitchenObj.SetKitchenObjectHolder(kitchenObjHolder);
+        }
+
+
+        public void DestroyKitchenObject(KitchenObject kitchenObject) => DestrorKitchenObjectServerRpc(kitchenObject.NetworkObject);
+
+        [ServerRpc(RequireOwnership = false)]
+        private void DestrorKitchenObjectServerRpc(NetworkObjectReference kitchenObjNetworkObjRef)
+        {
+            if (!kitchenObjNetworkObjRef.TryGet(out NetworkObject kitchenObjNetworkObj))
+            {
+                this.LogWarning("Invalid switchKitchenObjectNetworkObjectRef passed to DestrorKitchenObject-ServerRpc!");
+                return;
+            }
+            KitchenObject kitchenObject = kitchenObjNetworkObj.GetComponent<KitchenObject>();
+
+            if (kitchenObject.GetKitchenObjectHolder() != null)
+                DestrorKitchenObjectCallbackClientRpc(kitchenObject.GetKitchenObjectHolder().GetNetworkObject());
+
+            kitchenObject.DestrorSelf();
+        }
+
+        [ClientRpc]
+        private void DestrorKitchenObjectCallbackClientRpc(NetworkObjectReference kitchenObjHolderNetworkObjRef)
+        {
+            if (!kitchenObjHolderNetworkObjRef.TryGet(out NetworkObject kitchenObjHolderNetworkObj))
+            {
+                this.LogWarning("Invalid switchKitchenObjectHolderNetworkObjectRef passed to DestrorKitchenObjectCallback-ClientRpc!");
+                return;
+            }
+            IKitchenObjectHolder kitchenObjectHolder = kitchenObjHolderNetworkObj.GetComponent<IKitchenObjectHolder>();
+
+            kitchenObjectHolder.ClearKitchenObject(); // remove reference from parent holder
+            // trash counter deletes any object tats been set to it, in that case,
+            // 'kitchenObjectHolder' might still be uninitialized
         }
     }
 }

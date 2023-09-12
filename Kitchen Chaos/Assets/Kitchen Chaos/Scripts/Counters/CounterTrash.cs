@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace KC
@@ -24,7 +25,17 @@ namespace KC
 
         private void TrashKitchenObject(KitchenObject kitchenObject)
         {
-            kitchenObject.DestrorSelf();
+            KitchenObject.DestroyKitchenObject(kitchenObject);
+            InteractPrimaryServerRpc();
+        }
+
+
+        [ServerRpc(RequireOwnership = false)]
+        private void InteractPrimaryServerRpc() => InteractPrimaryCallbackClientRpc();
+
+        [ClientRpc]
+        private void InteractPrimaryCallbackClientRpc()
+        {
             OnAnyObjectTrashed?.Invoke(GetHolderTransform(), EventArgs.Empty);
         }
 

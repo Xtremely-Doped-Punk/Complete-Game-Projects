@@ -15,7 +15,7 @@ namespace KC
         private void Awake()
         {
             if (counterCutting == null)
-                Debug.Log("Counter Cutting reference not set to Visual Script:" + this);
+                this.Log("Counter Cutting reference not set to Visual Script");
 
             progressBar.SetHasProgressBarReference(counterCutting);
 

@@ -13,7 +13,7 @@ namespace KC
                 // there is no kitch object in this counter
                 if (player.HasKitchenObject())
                 {
-                    Debug.Log("Clean Counter (RPC)-interacted holding: " + player.GetKitchenObject().KitchenItemSO.UniqueName + " from player.");
+                    this.Log("Clean Counter (RPC)-interacted holding: " + player.GetKitchenObject().KitchenItemSO.UniqueName + " from player.");
 
                     // player is carrying some kitchen object 
                     player.GetKitchenObject().SetKitchenObjectHolder(this); // place object on counter
@@ -33,7 +33,7 @@ namespace KC
             {
                 if (!player.HasKitchenObject())
                 {
-                    Debug.Log("Clean Counter (RPC)-interacted giving: " + this.GetKitchenObject().KitchenItemSO.UniqueName + " to player");
+                    this.Log("Clean Counter (RPC)-interacted giving: " + this.GetKitchenObject().KitchenItemSO.UniqueName + " to player");
 
                     this.GetKitchenObject().SetKitchenObjectHolder(player); // give object to player
                 }

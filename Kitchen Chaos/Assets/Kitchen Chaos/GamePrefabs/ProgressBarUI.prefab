@@ -190,9 +190,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4630937338cc5b438d13430d709f4ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mode: 1
+  mode: 3
   autoHandleInversion: 1
   parentRegularYRotationRange: {x: 90, y: 270}
+  autoHandleInversionEveryFrame: 0
 --- !u!114 &5895530603604749883
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -208,7 +209,7 @@ MonoBehaviour:
   hasProgressTransform: {fileID: 0}
   progressBarParent: {fileID: 1760937470960589256}
   progressBarImage: {fileID: 2259260662928144232}
-  hideProgressOnExtremes: 1
+  <HideProgressOnExtremes>k__BackingField: 1
 --- !u!1 &7159465875904154980
 GameObject:
   m_ObjectHideFlags: 0
