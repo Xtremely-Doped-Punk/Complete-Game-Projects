@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace KC
 {
-    [System.Serializable]
+    // NOTE: Inorder to use this as parameter NetworkVariable<T> or NetworkList<T> use struct
+    [Serializable]
     public class Ingredient : INetworkSerializable
     {
         public Ingredient() 
@@ -39,7 +40,7 @@ namespace KC
 
         [Range(1, 5)] public int ingredientCount;
 
-        private int networkKitchenItemIndex; // use hash-code or fixed-string, both has its pros and cons
+        internal int networkKitchenItemIndex; // use hash-code or fixed-string, both has its pros and cons
         /* pros and cons:
         in case of HashCode, using a stringVariable.GetHashCode() and "yourString".GetHashCode(), 
         might not be sometimes neccessary same, as accoding to documentations of .NET:
@@ -62,26 +63,34 @@ namespace KC
             serializer.SerializeValue(ref ingredientCount);
         }
 
-        
-        public static Ingredient FindIngredient(IReadOnlyList<Ingredient> ingredients, KitchenItemSO kitchenItemSO)
+        public static bool operator== (Ingredient ingr1, Ingredient ingr2) =>
+            ingr1.networkKitchenItemIndex == ingr2.networkKitchenItemIndex && ingr1.ingredientCount == ingr2.ingredientCount;
+        public static bool operator !=(Ingredient ingr1, Ingredient ingr2) =>
+            ingr1.networkKitchenItemIndex != ingr2.networkKitchenItemIndex || ingr1.ingredientCount != ingr2.ingredientCount;
+    }
+    public static class Ingredient_Extentions
+    {
+        public static int FindIngredient(this IReadOnlyList<Ingredient> ingredients, KitchenItemSO kitchenItemSO, out Ingredient ingredientFound)
         {
-            foreach (Ingredient ingredient in ingredients)
+            ingredientFound = null;
+            for (int i = 0; i < ingredients.Count; i++)
             {
-                if (ingredient.KitchenItemSO == kitchenItemSO)
+                if (ingredients[i].KitchenItemSO == kitchenItemSO)
                 {
-                    return ingredient;
+                    ingredientFound = ingredients[i];
+                    return i;
                 }
             }
-            return null;
+            return -1;
         }
 
-        public static int FindIngredientCount(IReadOnlyList<Ingredient> ingredients, KitchenItemSO kitchenItemSO)
+        public static int FindIngredientCount(this IReadOnlyList<Ingredient> ingredients, KitchenItemSO kitchenItemSO)
         {
             int networkKitchenItemIndex = MultiplayerManager.GetNetworkKitchenItemIndex(kitchenItemSO);
             return FindIngredientCount(ingredients, networkKitchenItemIndex);
         }
 
-        public static int FindIngredientCount(IReadOnlyList<Ingredient> ingredients, int networkKitchenItemIndex)
+        public static int FindIngredientCount(this IReadOnlyList<Ingredient> ingredients, int networkKitchenItemIndex)
         {
             if (networkKitchenItemIndex != -1)
             {

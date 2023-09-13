@@ -117,8 +117,8 @@ namespace KC
 
             foreach (Ingredient recipeIngredient in deliveryRecipeSO.IngredientsArray)
             {
-                Ingredient ingredientFound = Ingredient.FindIngredient(plateIngredientsHeldList, recipeIngredient.KitchenItemSO);
-                if (ingredientFound == null || ingredientFound.ingredientCount != recipeIngredient.ingredientCount)
+                if (plateIngredientsHeldList.FindIngredient(recipeIngredient.KitchenItemSO, out Ingredient ingredientFound) == -1
+                    || ingredientFound.ingredientCount != recipeIngredient.ingredientCount)
                 {
                     // if any ingredient not found or if the ingredient count doesn't match
                     return false;
@@ -139,14 +139,14 @@ namespace KC
         private bool CheckPlateDeliveryRecipeMatch(IReadOnlyList<Ingredient> plateIngredientsList, int deliveryRecipeIndex)
         {
             DeliveryRecipeSO deliveryRecipeSO = waitingDeliveryRecipeSOList[deliveryRecipeIndex];
-            this.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsList.Count);
+            //this.Log("Checking Delivery Recipe Match for:" + deliveryRecipeSO+ ", plate Ingredients Count:"+plateIngredientsList.Count);
 
             if (plateIngredientsList.Count != deliveryRecipeSO.IngredientsArray.Length) return false;
             // if length of recipe doesnt match, no need to check each kitchen object in them
 
             foreach (Ingredient recipeIngredient in deliveryRecipeSO.IngredientsArray)
             {
-                int ingredientFoundCount = Ingredient.FindIngredientCount(plateIngredientsList, recipeIngredient.KitchenItemSO);
+                int ingredientFoundCount = plateIngredientsList.FindIngredientCount(recipeIngredient.KitchenItemSO);
                 if (ingredientFoundCount != recipeIngredient.ingredientCount)
                 {
                     // if any ingredient not found or if the ingredient count doesn't match

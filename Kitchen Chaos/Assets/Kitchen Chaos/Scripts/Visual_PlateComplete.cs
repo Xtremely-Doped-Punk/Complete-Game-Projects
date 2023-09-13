@@ -61,8 +61,8 @@ namespace KC
 
         private void HandlePlateVisualOnIngredientChanged(object sender, PlateKitchenObject.IngredientsChangedEventArgs e)
         {
-            int mapIndex =
-                KitchenItemSO_GameObject_Map.FindItemVisualMapIndex(kitchenItemsToVisualObjectsMap, e.ingredient.KitchenItemSO);
+            //this.Log($"{nameof(HandlePlateVisualOnIngredientChanged)} args => {e.ingredient.KitchenItemSO}, {e.ingredient.ingredientCount}, {(e.isAdded ? "Added" : "Removed")}");
+            int mapIndex = kitchenItemsToVisualObjectsMap.FindItemVisualMapIndex(e.ingredient.KitchenItemSO);
 
             if (mapIndex == -1)
                 return;
@@ -94,7 +94,7 @@ namespace KC
                 else
                 {
                     // update text alone, as it is already existing
-                    ingredientIconInstanceUI.UpdateIngredientVisuals();
+                    ingredientIconInstanceUI.UpdateIngredientCountVisual(e.ingredient);
                 }
             }
             else
@@ -110,14 +110,14 @@ namespace KC
                 else
                 {
                     // update text alone, as it is already existing
-                    ingredientIconInstanceUI.UpdateIngredientVisuals();
+                    ingredientIconInstanceUI.UpdateIngredientCountVisual(e.ingredient);
                 }
             }
 
             if (e.ingredient.ingredientCount > 1)
             {
                 // update text alone, as it is already existing
-                ingredientIconInstanceUI.UpdateIngredientVisuals();
+                ingredientIconInstanceUI.UpdateIngredientCountVisual(e.ingredient);
             }
             else
             {
@@ -154,7 +154,10 @@ namespace KC
     {
         public KitchenItemSO kitchenItemSO;
         public GameObject visualGameObject;
-        public static int FindItemVisualMapIndex(KitchenItemSO_GameObject_Map[] itemVisualMaps, KitchenItemSO findKitchenItemSO)
+    }
+    public static class KitchenItemSO_GameObject_Map_Extentions
+    {
+        public static int FindItemVisualMapIndex(this KitchenItemSO_GameObject_Map[] itemVisualMaps, KitchenItemSO findKitchenItemSO)
         {
             for (int i = 0; i < itemVisualMaps.Length; i++)
             {

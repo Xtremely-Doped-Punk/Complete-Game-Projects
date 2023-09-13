@@ -14,16 +14,19 @@ namespace KC
         [SerializeField] private Image iconImage;
         [SerializeField] private TextMeshProUGUI iconText;
         // note: TextMeshPro and TextMeshProUGUI are seperate comps (UGUI indicates it is ui-element)
-        private Ingredient ingredient;
+        private KitchenItemSO kitchenItemSO;
         
-        public void UpdateIngredientVisuals()
+        public void UpdateIngredientCountVisual(Ingredient ingredient) // for updating value
         {
+            if (kitchenItemSO != ingredient.KitchenItemSO)
+                kitchenItemSO = ingredient.KitchenItemSO; // just for safe checks
+
             iconText.text = ingredient.ingredientCount.ToString();
         }
 
         public void SetupIngredientIconCount(Ingredient ingredient)
         {
-            this.ingredient = ingredient;
+            this.kitchenItemSO = ingredient.KitchenItemSO;
             iconImage.sprite = ingredient.KitchenItemSO.Icon;
             iconText.text = ingredient.ingredientCount.ToString();
         }
@@ -33,7 +36,7 @@ namespace KC
             selectionBtn.onClick.AddListener(() =>
             {
                 //Debug.Log("--> ingredient single icon UI clicked! " + iconImage.sprite.name);
-                plateKitchenObject.RemoveIngredient(ingredient.KitchenItemSO, PlayerController.LocalInstance.GetSelectedCounter());
+                plateKitchenObject.RemoveIngredient(kitchenItemSO, PlayerController.LocalInstance.GetSelectedCounter());
                 action?.Invoke();
             });
         }
