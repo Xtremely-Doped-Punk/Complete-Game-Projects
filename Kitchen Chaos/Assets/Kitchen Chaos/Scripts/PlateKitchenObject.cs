@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -90,7 +91,7 @@ namespace KC
         {
             if (kitchenItemSO == null || switchKitchenObjectHolder == null) return;
 
-            RemoveIngredientServerRpc(NetworkManager.LocalClientId,
+            RemoveIngredientServerRpc(
                 MultiplayerManager.GetNetworkKitchenItemIndex(kitchenItemSO),
                 switchKitchenObjectHolder.GetNetworkObject());
 
@@ -98,7 +99,7 @@ namespace KC
                 SetCanDrop(false);
         }
 
-        [ServerRpc] public void RemoveIngredientServerRpc(ulong clientId, int kitchenItemSOIndex, NetworkObjectReference switchKitchenObjHolderNetworkObjRef)
+        [ServerRpc] public void RemoveIngredientServerRpc(int kitchenItemSOIndex, NetworkObjectReference switchKitchenObjHolderNetworkObjRef, ServerRpcParams rpcParams = default)
         {
             if (!switchKitchenObjHolderNetworkObjRef.TryGet(out NetworkObject switchKitchenObjHolderNetworkObj))
             {
@@ -119,7 +120,8 @@ namespace KC
                 this.LogError($"Given kitchen object:{kitchenItemSO} is not found as a ingredient at this plate.");
                 return;
             }
-
+            
+            ulong clientId = rpcParams.Receive.SenderClientId;
             // decrease count of ingredients if present
             ingredientFound.ingredientCount--;
             RemoveIngredientClientRpc(clientId, ingrFoundIndex, ingredientFound);
@@ -128,10 +130,12 @@ namespace KC
         }
         [ClientRpc] public void RemoveIngredientClientRpc(ulong targetClientID, int ingredientIndex, Ingredient ingredientFound)
         {
+            /* for multiple target client, best to use <param> ClientRpcParams rpcParams = default </param> rather than ulong[]
+            rpcParams.Send.TargetClientIds.Contains(GameManager.LocalClientID) // check condition in that case */
             if (ingredientFound.ingredientCount <= 0)
             {
                 plateIngredientsHeldList.Remove(ingredientFound);
-                if (NetworkManager.LocalClientId == targetClientID && canDrop) // UI updation must be done to that specific playe only
+                if (GameManager.LocalClientID == targetClientID && canDrop) // UI updation must be done to that specific playe only
                     SetCanDrop(false);
             }
             else

@@ -12,9 +12,10 @@ GameObject:
   - component: {fileID: 3775754637678845431}
   - component: {fileID: 3775754637678845425}
   - component: {fileID: 3775754637678845424}
+  - component: {fileID: 7900409581560806653}
   - component: {fileID: -8461764283423133697}
   - component: {fileID: -6524742990128015565}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -54,14 +55,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementSpeed: 7
   rotationSpeed: 10
-  capsuleCollider: {fileID: 3775754637678845424}
   interactiveRadius: 1.5
   countersLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  collisionLayerMask:
+    serializedVersion: 2
+    m_Bits: 192
   objHoldingPoint: {fileID: 3775754637881475303}
+  capsuleCollider: {fileID: 3775754637678845424}
+  boxCollider: {fileID: 7900409581560806653}
   selectedCounter: {fileID: 0}
   KitchenObjHeld: {fileID: 0}
+  isColliding: 0
 --- !u!114 &3775754637678845425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87,10 +93,23 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.7
-  m_Height: 2
+  m_Radius: 0.55
+  m_Height: 1.75
   m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 1.1, z: 0}
+--- !u!65 &7900409581560806653
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3775754637678845428}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1.2, y: 0.75, z: 1}
+  m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!114 &-8461764283423133697
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105,6 +124,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!114 &-6524742990128015565
@@ -131,8 +153,12 @@ MonoBehaviour:
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
   InLocalSpace: 0
   Interpolate: 1
+  SlerpPosition: 0
 --- !u!1 &3775754637881475300
 GameObject:
   m_ObjectHideFlags: 0
@@ -142,7 +168,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3775754637881475303}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: HolderPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -177,8 +203,8 @@ GameObject:
   - component: {fileID: 3775754638005028409}
   - component: {fileID: 3775754638005028414}
   - component: {fileID: 3775754638005028411}
-  m_Layer: 0
-  m_Name: Capsule
+  m_Layer: 7
+  m_Name: TestDemo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
