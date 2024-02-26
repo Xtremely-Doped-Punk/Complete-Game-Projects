@@ -117,11 +117,11 @@ namespace KC
             thus as ususal RPC call must be of 'void' return type;
             */
 
-            MultiplayerManager.Instance.SpawnKitchenObject(kitchenItemSO, kitchenObjHolder);
+            MultiplayerManager.Singleton.SpawnKitchenObject(kitchenItemSO, kitchenObjHolder);
         }
         public static void DestroyKitchenObject(KitchenObject kitchenObject)
         {
-            MultiplayerManager.Instance.DestroyKitchenObject(kitchenObject);
+            MultiplayerManager.Singleton.DestroyKitchenObject(kitchenObject);
         }
 
         public bool TryGetPlate(out PlateKitchenObject plateKitchenObject)

@@ -16,6 +16,7 @@ namespace KC
         public event EventHandler OnGameStateChanged;
         public event EventHandler OnGameTogglePaused;
         public event EventHandler<KeyValuePair<ulong, bool>> OnAnyPlayerToggleReady;
+        public event EventHandler<ulong> OnAnyPlayerDisconnected;
 
         public enum State { WaitingToStart, ReadyToPlay, CountdownToStart, GamePlaying, GameOver }
         private NetworkVariable<State> state = new(State.WaitingToStart);
@@ -25,6 +26,7 @@ namespace KC
         [SerializeField] private float gamePlayingTimerMax = 150f;
         [SerializeField] private Transform rootSpawnPoint;
         [SerializeField] private NetworkObject playerPrefab;
+        [field: SerializeField] public bool ResetPlayerStatesOnPaused { get; private set; } = false;
 
         [field: SerializeField, Obsolete] public bool Testing { get; private set; } = false;
         // using obsolete, so that finally it will be easier to remove all its instances
@@ -42,8 +44,13 @@ namespace KC
         private Dictionary<ulong, bool> players = new(); // key:clientID, val:bool denotes if the resp player is ready or not
         private bool IsAllPlayersReady => players.Values.All(ready => ready); // check == true
         private bool IsAllPlayersNotReady => players.Values.All(ready => !ready); // check == false
-        private bool IsMostPlayersReady => players.Values.Count(ready => ready) > players.Count/2; // check == true
-        private bool IsMostPlayersNotReady => players.Values.Count(ready => !ready) > players.Count/2; // check == false
+        /*
+         make sure check majority in float based comparison, so that 
+         for even no. of players, half of votes is enuf to pause the game
+         whereas for odd no.of players, more than half votes is required 
+         */
+        private bool IsMostPlayersReady => players.Values.Count(ready => ready) >= players.Count/2f; // check == true
+        private bool IsMostPlayersNotReady => players.Values.Count(ready => !ready) >= players.Count/2f; // check == false
 
         public bool IsAllPlayersSameReady => IsAllPlayersReady || IsAllPlayersNotReady;
 
@@ -71,7 +78,7 @@ namespace KC
             InputManager.Instance.OnPrimaryInteractAction += ToggleReady;
             
             NetworkManager.OnClientConnectedCallback += GameManager_OnClientConnectedCallback_ServerRpc;
-            NetworkManager.OnClientDisconnectCallback += GameManager_OnClientDisconnectCallback_ServerRpc;
+            NetworkManager.OnClientDisconnectCallback += GameManager_OnClientDisconnectCallback;
         }
 
         public override void OnNetworkSpawn()
@@ -127,9 +134,14 @@ namespace KC
             players.Add(clientID, false); // adding player to list after initialization
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void GameManager_OnClientDisconnectCallback_ServerRpc(ulong clientID)
-        { if (IsServer) players.Remove(clientID); }
+        private void GameManager_OnClientDisconnectCallback(ulong clientID)
+        {
+            players.Remove(clientID);
+            OnAnyPlayerDisconnected?.Invoke(this, clientID);
+
+            if (IsServer) // incases if game is paused or unready state prev, it rechecks the votes again
+                HandlePlayerVotes();
+        }
         #endregion
 
         private void Update()
@@ -155,7 +167,9 @@ namespace KC
                 case State.GamePlaying:
                     gamePlayingTimer.Value -= Time.deltaTime;
                     if (gamePlayingTimer.Value < 0f)
+                    {
                         ChangeGameState(State.GameOver);
+                    }
                     break;
 
                 case State.GameOver: 
@@ -283,15 +297,16 @@ namespace KC
             this.Log("Is Game Paused: " + isGamePaused.Value);
             OnGameTogglePaused?.Invoke(this, EventArgs.Empty);
 
-            // reset player-ready dict
-            foreach (var key in players.Keys.ToList())
-                players[key] = !IsGamePaused;
+            if (ResetPlayerStatesOnPaused) // reset player-ready dict
+                foreach (var key in players.Keys.ToList())
+                    players[key] = !IsGamePaused;
         }
 
         public bool IsGamePlaying => state.Value == State.GamePlaying;
         public bool IsGameOver => state.Value == State.GameOver;
         public bool IsCountdownActive => state.Value == State.CountdownToStart;
         public bool IsReadyToPlay => state.Value == State.ReadyToPlay;
+        public bool IsWaitingToStart => state.Value == State.WaitingToStart;
         public float GetGamePlayingTimerNormalized() => gamePlayingTimer.Value / gamePlayingTimerMax;
         public float GetWaitingTimerNormalized() => waitingToCountdownTimer.Value / waitingToCountdownTimerMax;
         public int GetCountdownTimerValue() => Mathf.CeilToInt(countdownToStartTimer.Value);

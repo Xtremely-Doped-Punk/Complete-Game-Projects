@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -38,8 +39,10 @@ namespace KC
 
             mainMenuBtn.onClick.AddListener(() =>
             {
-                // reset timw scale that has been changed to 0 become switchiing scene
-                Time.timeScale = 1;
+                NetworkManager.Singleton.Shutdown(); // shutdown network connection when game is quit in between
+
+                // reset time scale that had been changed to 0 before switchiing scene
+                if (NetworkManager.Singleton.IsServer) Time.timeScale = 1;
                 SceneLoader.Load(SceneLoader.Scene.MainMenuScene);
             });
         }
@@ -48,11 +51,24 @@ namespace KC
         {
             GameManager.Instance.OnGameTogglePaused  += HandleGamePausedUIOnGameStateChanged;
             GameManager.Instance.OnAnyPlayerToggleReady += HandleGamePausedUIOnTogglePlayerReady;
+            GameManager.Instance.OnAnyPlayerDisconnected += HandleGamePausedUIOnPlayerDisconnected;
             if (parent == null)
             {
                 parent = transform;
                 HideGamePauseScreen();
             }
+        }
+
+        private void HandleGamePausedUIOnPlayerDisconnected(object sender, ulong id)
+        {
+            if (id == NetworkManager.ServerClientId)
+            {
+                HideGamePauseScreen(); // game over when host disconnects
+                return;
+            }
+            int keyIndex = KeyIDs.IndexOf(id);
+            if (keyIndex != -1)
+                Destroy(playerVoteUIList[keyIndex].gameObject);
         }
 
         private void HandleGamePausedUIOnTogglePlayerReady(object sender, KeyValuePair<ulong, bool> e)
@@ -71,6 +87,11 @@ namespace KC
             else
                 InstantiatePlayerVoteIcon(e, true); // adding late joined players icons after start of the match
 
+            DisplayVotePanel();
+        }
+
+        private void DisplayVotePanel()
+        {
             if (GameManager.Instance.IsAllPlayersSameReady)
                 votePanel.gameObject.SetActive(false);
             else
@@ -97,7 +118,10 @@ namespace KC
             else
                 HideGamePauseScreen();
 
-            playerVoteUIList.ForEach(x => x.ResetPlayerIconVote(!GameManager.Instance.IsGamePaused));
+            if (GameManager.Instance.ResetPlayerStatesOnPaused)
+                playerVoteUIList.ForEach(x => x.ResetPlayerIconVote(!GameManager.Instance.IsGamePaused));
+
+            DisplayVotePanel();
         }
 
         private void ShowGamePauseScreen()

@@ -22,20 +22,26 @@ namespace KC
             startHostBtn.onClick.AddListener(() =>
             {
                 this.Log("HOST!");
-                NetworkManager.Singleton.StartHost();
+                MultiplayerManager.Singleton.StartHost();
                 //StartCoroutine(CheckConnection());
             });
 
             startClientBtn.onClick.AddListener(() =>
             {
                 this.Log("CLIENT!");
-                NetworkManager.Singleton.StartClient();                
+                MultiplayerManager.Singleton.StartClient();
                 //StartCoroutine(CheckConnection());
             });
-            
+
             NetworkManager.Singleton.OnClientStarted += Hide;
-            NetworkManager.Singleton.OnClientStopped += (_) => Show();
-            NetworkManager.Singleton.OnTransportFailure += Show;
+        }
+        private void Start()
+        {
+            if (GameManager.Instance.Testing)
+            {
+                NetworkManager.Singleton.OnClientStopped += (_) => Show();
+                NetworkManager.Singleton.OnTransportFailure += Show;
+            }
         }
 
         private IEnumerator CheckConnection()
@@ -52,7 +58,15 @@ namespace KC
             Show();
         }
 
-        private void Hide() => netcodeCanvasGroup.alpha = 0f;
-        private void Show() => netcodeCanvasGroup.alpha = 1f;
+        private void Hide()
+        {
+            netcodeCanvasGroup.alpha = 0f;
+            netcodeCanvasGroup.blocksRaycasts = false;
+        }
+        private void Show()
+        {
+            netcodeCanvasGroup.alpha = 1f;
+            netcodeCanvasGroup.blocksRaycasts = true;
+        }
     }
 }

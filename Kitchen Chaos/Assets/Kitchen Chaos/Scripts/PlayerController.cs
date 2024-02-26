@@ -39,7 +39,10 @@ namespace KC
             }
             OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
 
-            name = name.Replace("Clone", $"ID:{OwnerClientId}"); // chaning the GameObject-name for easiler identification in local hierarchy            
+            name = name.Replace("Clone", $"ID:{OwnerClientId}"); // changing the GameObject-name for easiler identification in local hierarchy
+
+            NetworkManager.OnClientDisconnectCallback += PlayerController_OnClientDisconnectCallback; 
+            // this callback is run on server and local client with clientID as param, in order to destroy whatever object is being held by the player that disconnects
         }
         #endregion
 
@@ -82,6 +85,21 @@ namespace KC
             // client authentication, means that the game update logic done by the player is not verified from server side
         }
 
+        private void PlayerController_OnClientDisconnectCallback(ulong clientID)
+        {
+            if (clientID != OwnerClientId) return;
+
+            if (IsServer)
+            {
+                // server actions when the some client disconnects
+                if (HasKitchenObject()) // destroy object held by player when disconnects
+                    KitchenObject.DestroyKitchenObject(GetKitchenObject());
+            }
+            if (IsClient)
+            {
+                // client actions when the other clients disconnects
+            }
+        }
         #region Handle Interactions
 
         private void HandlePlayerPrimaryInteraction(object sender, EventArgs e)

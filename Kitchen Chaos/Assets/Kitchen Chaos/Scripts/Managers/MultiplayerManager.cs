@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -7,29 +8,56 @@ namespace KC
 {
     public class MultiplayerManager : NetworkBehaviour
     {
-        public static MultiplayerManager Instance { get; private set; } = null;
+        public static MultiplayerManager Singleton { get; private set; } = null;
         [SerializeField] private NetworkKitchenItemsListSO networkKitchenItemsListSO;
 
         private void Awake()
         {
-            if (Instance == null)
-                Instance = this;
-            else if (Instance != this)
+            if (Singleton == null)
+                Singleton = this;
+            else if (Singleton != this)
                 Destroy(this);
         }
 
+        public void StartHost()
+        {
+            NetworkManager.ConnectionApprovalCallback += MultiplayerManager_ConnectionApprovalCallback;
+            NetworkManager.StartHost();
+        }
+
+        private void MultiplayerManager_ConnectionApprovalCallback(
+            NetworkManager.ConnectionApprovalRequest connAprReqt, 
+            NetworkManager.ConnectionApprovalResponse connAprResp)
+        {
+            // allow players to connect only at the begining of the game, i.e. late joins not allowed
+            if (GameManager.Instance.IsWaitingToStart)
+                connAprResp.Approved = true; // approves the connection
+            else
+            {
+                connAprResp.Approved = false; // disapproves the connection
+                connAprResp.Reason = "Game Session under process!";
+            }
+            this.Log($"client:{connAprReqt.ClientNetworkId} tring to connect, response:{connAprResp.Approved}");
+        }
+
+        public void StartClient()
+        {
+            NetworkManager.StartClient();
+        }
+
+
         public static int GetNetworkKitchenItemIndex(KitchenItemSO kitchenItemSO)
         {
-            int index = Instance.networkKitchenItemsListSO.IndexOf(kitchenItemSO);
+            int index = Singleton.networkKitchenItemsListSO.IndexOf(kitchenItemSO);
             if (index == -1)
-                Instance.LogWarning("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
+                Singleton.LogWarning("KitchenItem-NetworkIndex not found, 'NetworkKitchenItemsListSO' has been changed!!!");
             return index;
         }
         public static KitchenItemSO GetNetworkKitchenItem(int index)
         {
-            KitchenItemSO kitchenItemSO = Instance.networkKitchenItemsListSO.AtIndex(index);
+            KitchenItemSO kitchenItemSO = Singleton.networkKitchenItemsListSO.AtIndex(index);
             if (kitchenItemSO == null)
-                Instance.LogWarning("KitchenItem not found, as given Network-Index is invalid!!!");
+                Singleton.LogWarning("KitchenItem not found, as given Network-Index is invalid!!!");
             return kitchenItemSO;
         }
 

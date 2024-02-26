@@ -18,6 +18,8 @@ namespace KC
             this.ClientID = pair.Key;
             this.Vote = pair.Value;
             iconText.text = $"ID:{ClientID}";
+            if (!GameManager.Instance.ResetPlayerStatesOnPaused)
+                UpdatePlayerIconVote(Vote); // if resetting vote not enabled, always updates the vote colors
         }
 
         public void ResetPlayerIconVote(bool defaultVote)
